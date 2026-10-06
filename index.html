@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>命魂之玉性价比计算器 · 梦幻西游端游</title>
+<style>
+  :root{
+    --bg:#0b0e14;
+    --surface:#11151d;
+    --surface-2:#161b26;
+    --border:#232a38;
+    --border-strong:#33405a;
+    --text:#dce3f0;
+    --muted:#8a94a8;
+    --dim:#5f7392;
+    --amber:#e8b34c;
+    --green:#4ecf7a;
+    --coral:#ff6b5e;
+    --mono:"Cascadia Code",Consolas,"Microsoft YaHei",monospace;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--text);
+    font:13px/1.6 var(--mono);
+    font-variant-numeric:tabular-nums;
+    counter-reset:panel;
+  }
+  ::selection{background:rgba(232,179,76,.28);color:var(--text)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#242d3d;border:2px solid var(--bg);border-radius:5px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 20px 40px}
+
+  header{margin-bottom:20px}
+  header h1{margin:0;font-size:17px;font-weight:600;letter-spacing:.04em;color:var(--text)}
+  header h1 b{color:var(--amber);font-weight:600}
+  header p{margin:4px 0 0;color:var(--dim);font-size:12px}
+  header .tag{display:inline-block;margin-left:8px;padding:0 6px;border:1px solid var(--border-strong);color:var(--dim);font-size:11px;border-radius:2px;vertical-align:2px}
+
+  .grid{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);grid-template-areas:"in w" "r r" "c c";gap:20px 16px}
+  @media (max-width:920px){.grid{grid-template-columns:1fr;grid-template-areas:"in" "w" "r" "c"}}
+
+  .panel{position:relative;grid-area:auto;border:1px solid var(--border);background:var(--surface);border-radius:2px;padding:18px 16px 16px;counter-increment:panel}
+  .panel>.ptitle{position:absolute;top:-10px;left:12px;margin:0;background:var(--bg);padding:0 8px;font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--amber)}
+  .panel>.ptitle::before{content:counter(panel,decimal-leading-zero);color:var(--coral);font-size:10px;margin-right:7px;vertical-align:2px}
+  #panel-input{grid-area:in}
+  #panel-weights{grid-area:w}
+  #panel-result{grid-area:r}
+  #panel-compare{grid-area:c}
+
+  .lab{color:var(--dim);font-size:12px}
+  .hint{color:var(--dim);font-size:11px;line-height:1.5;margin-top:4px}
+  .unit{color:var(--amber);font-size:11px}
+  .dim{color:var(--dim)}
+  .small{font-size:11px}
+  .good{color:var(--green)}
+  .bad{color:var(--coral)}
+
+  .in{width:100%;background:#0e1219;border:1px solid var(--border);color:var(--text);font:inherit;border-radius:2px;padding:4px 8px;height:27px}
+  .in::placeholder{color:#48546b}
+  .in:focus-visible{outline:1px solid var(--amber);outline-offset:1px}
+  select.in{cursor:pointer}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+
+  .btn{background:var(--surface-2);border:1px solid var(--border-strong);color:var(--text);font:inherit;padding:4px 14px;cursor:pointer;border-radius:2px}
+  .btn:hover{border-color:var(--amber);color:var(--amber)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:1px solid var(--amber);outline-offset:1px}
+  .btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .btn.primary{background:#1c2a44;border-color:#3b5480}
+  .icon-btn{width:24px;height:24px;flex:0 0 24px;background:none;border:1px solid transparent;color:var(--dim);font:inherit;font-size:14px;cursor:pointer;border-radius:2px;line-height:1}
+  .icon-btn:hover{color:var(--coral);border-color:var(--border-strong)}
+  .icon-btn:focus-visible{outline:1px solid var(--amber);outline-offset:1px}
+
+  .chip{background:none;border:1px solid var(--border);color:var(--muted);font:inherit;font-size:12px;padding:2px 10px;cursor:pointer;border-radius:2px}
+  .chip:hover{border-color:var(--border-strong);color:var(--text)}
+  .chip.on{background:#20304e;border-color:#3f5c8f;color:#cfe0ff}
+  .chip:focus-visible{outline:1px solid var(--amber);outline-offset:1px}
+
+  .chk{display:flex;align-items:center;gap:6px;margin-top:24px;color:var(--muted);font-size:12px;cursor:pointer;user-select:none}
+  .chk input{accent-color:var(--amber);width:13px;height:13px;cursor:pointer;flex:0 0 13px}
+  .chk input:focus-visible{outline:1px solid var(--amber);outline-offset:1px}
+
+  /* 表单 */
+  .frow{display:grid;grid-template-columns:1fr 130px;gap:8px;margin-top:8px}
+  .frow1{margin-top:8px}
+  .frow label,.frow1>label{display:block;margin-bottom:3px}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--text)}
+  th.on{color:var(--text)}
+  th .arr{font-size:9px;margin-left:2px;color:var(--amber)}
+
+  /* 属性行 */
+  .attr-head,.attr-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 78px 24px;gap:8px;align-items:center}
+  .attr-head{margin:16px 0 6px;color:var(--amber);font-size:11px;letter-spacing:.08em}
+  .attr-row{margin-top:6px}
+  .attr-row .cscore{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .attr-list{border-top:1px dashed var(--border);padding-top:2px}
+  #addRow{margin-top:12px}
+  .row-del{display:flex;justify-content:flex-end}
+
+  /* 权重 */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+  .w-list{border-top:1px dashed var(--border);margin-top:8px;padding-top:4px;max-height:460px;overflow:auto}
+  .w-row{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px;align-items:center;padding:3px 0}
+  .w-row .lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .w-note{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+
+  /* 结果 */
+  .res-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px 20px;margin-top:4px}
+  @media (max-width:920px){.res-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .res-cell .big{display:block;font-size:26px;line-height:1.25;margin-top:2px}
+  .res-cell .mid{display:block;font-size:16px;line-height:1.5;margin-top:4px}
+  .meter-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .meter{position:relative;flex:1;height:18px;background:var(--surface-2);border:1px solid var(--border-strong)}
+  .meter::before{content:"";position:absolute;inset:3px 4px;background-image:radial-gradient(circle 3px at 6px 6px,#212b3d 99%,transparent 100%);background-size:12px 12px;background-repeat:repeat-x}
+  .meter .fill{position:absolute;inset:3px 4px;background:linear-gradient(90deg,#8f6a2a,#e8b34c 55%,#4ecf7a);
+    -webkit-mask-image:radial-gradient(circle 3px at 6px 6px,#000 99%,transparent 100%);-webkit-mask-size:12px 12px;-webkit-mask-repeat:repeat-x;
+    mask-image:radial-gradient(circle 3px at 6px 6px,#000 99%,transparent 100%);mask-size:12px 12px;mask-repeat:repeat-x;
+    clip-path:inset(0 calc(100% - var(--w,0%)) 0 0);transition:clip-path .3s ease}
+
+  .empty{border:1px dashed var(--border-strong);color:var(--dim);text-align:center;padding:26px 12px;margin-top:8px;font-size:12px}
+  #resDetail{margin-top:16px;border-top:1px solid var(--border);padding-top:10px}
+  .bd-head,.bd-row{display:grid;grid-template-columns:minmax(0,1fr) 76px 76px 84px minmax(60px,120px);gap:8px;align-items:center}
+  .bd-head{color:var(--amber);font-size:11px;letter-spacing:.08em;padding:2px 0 6px}
+  .bd-row{padding:3px 0}
+  .bd-row .num{text-align:right;white-space:nowrap}
+  .bd-row .val{color:var(--text)}
+  .bd-row .wt{color:var(--amber)}
+  .bd-row .sc{color:var(--green)}
+  .bd-bar{height:6px;background:#141926;border:1px solid var(--border)}
+  .bd-bar i{display:block;height:100%;background:linear-gradient(90deg,rgba(232,179,76,.95),rgba(232,179,76,.35))}
+  .res-foot{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+
+  /* 对比表 */
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th{color:var(--amber);font-weight:600;font-size:11px;letter-spacing:.06em;text-align:left;padding:6px 6px;border-bottom:1px solid var(--border-strong);white-space:nowrap}
+  td{padding:5px 6px;border-bottom:1px solid var(--border);white-space:nowrap}
+  tbody tr{cursor:pointer}
+  tbody tr:focus-visible{outline:1px solid var(--amber);outline-offset:-1px}
+  tbody tr:hover td{background:var(--surface-2)}
+  td.r,th.r{text-align:right}
+  tr.best td{background:rgba(78,207,122,.07)}
+  tr.best td:first-child{box-shadow:inset 2px 0 0 var(--green)}
+  tr.editing td{background:#1a2233}
+  tr.editing td:first-child{box-shadow:inset 2px 0 0 var(--amber)}
+  .cname{color:var(--text);display:block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+  .cname.unnamed{color:var(--dim)}
+  .attr-line{display:block;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+  tr.best .cname{color:var(--green)}
+  .cmp-foot{display:flex;justify-content:flex-end;margin-top:10px}
+
+  footer{margin-top:24px;color:#46536b;font-size:11px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>命魂之玉性价比计算器<b>·</b>梦幻西游端游<span class="tag">单文件 · 离线可用</span></h1>
+    <p>性价比 = 综合评分 ÷ 总成本（标价 + 灵尘镶嵌成本），元/分，越低越划算。评分 = Σ(属性值 × 权重)，以 1 点伤害 = 1 分为基准，权重可改。</p>
+  </header>
+
+  <main class="grid">
+
+    <!-- 01 玉信息与属性 -->
+    <section class="panel" id="panel-input">
+      <h2 class="ptitle">玉信息与属性</h2>
+      <div class="frow1">
+        <label class="lab" for="jadeName">名称（选填）</label>
+        <input class="in" id="jadeName" type="text" placeholder="例如：上古玉魄·阳 三伤害">
+      </div>
+      <div class="frow">
+        <div>
+          <label class="lab" for="jadeLevel">灵尘等级</label>
+          <select class="in" id="jadeLevel">
+            <option value="">—</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+            <option>11</option><option>12</option>
+          </select>
+        </div>
+        <div>
+          <label class="lab" for="jadePrice">价格（元）<span class="unit">¥</span></label>
+          <input class="in" id="jadePrice" type="number" min="0" step="any" placeholder="如 2400">
+        </div>
+      </div>
+      <div class="frow3b">
+        <div>
+          <label class="lab" for="dust5">灵尘市价（元/颗）<span class="unit">¥</span></label>
+          <input class="in" id="dust5" type="number" min="0" step="any" value="74">
+        </div>
+        <div>
+          <label class="lab" for="dustAnchor">对应等级</label>
+          <select class="in" id="dustAnchor">
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option selected>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div>
+          <label class="chk" for="dustExtra"><input type="checkbox" id="dustExtra">裸玉另算灵尘</label>
+        </div>
+      </div>
+      <p class="hint" id="dustHint">选择灵尘等级并填入五级灵尘市价后，自动按官方合成规则折算灵尘价值。</p>
+      <p class="hint">价格建议填藏宝阁人民币成交价。灵尘逐级镶嵌：镶到 N 级要依次镶 1~N 级灵尘各一颗（不能跳级），累计投入按官方合成规则（单颗 N 级 = 2×(N-1)级 + 1×(N-2)级）折算。灵尘市价填你查到的某级单价并在「对应等级」选它的等级——市价含手续费与溢价，等级越高溢价越多，选你最有把握的一档做锚最准。成品玉：等级填已镶到的级数，总成本就是标价；裸玉：填打算镶到的级数并勾选「裸玉另算灵尘」。主属性（抗物爆/抗法爆/抵抗封印/气血回复）按百分比填。</p>
+      <div class="frow1">
+        <label class="lab" for="benchPrice">参考市场单价（元/分，选填）</label>
+        <input class="in" id="benchPrice" type="number" min="0" step="any" placeholder="如 40：低于它算划算">
+        <p class="hint">填一个心理价位（每 1 分综合属性值多少钱），结果区会提示这件玉比参考贵/便宜多少。</p>
+      </div>
+
+      <div class="attr-head"><span>属性词条</span><span>数值</span><span style="text-align:right">得分</span><span></span></div>
+      <div class="attr-list" id="attrRows"></div>
+      <button class="btn" id="addRow" type="button">＋ 添加属性</button>
+      <p class="hint">数值框内按 回车 / Tab / ↓ 跳到下一个数值，↑ 返回上一个；最后一行按回车直接新增一行。</p>
+    </section>
+
+    <!-- 02 权重方案 -->
+    <section class="panel" id="panel-weights">
+      <h2 class="ptitle">权重方案</h2>
+      <div class="chips" id="presetChips"></div>
+      <div class="w-list" id="weightRows"></div>
+      <p class="hint w-note">权重 = 该属性每 1 点值多少“分”（1 点伤害 = 1 分基准），均为经验参考值。更准的用法：拿几笔你认为成交价合理的玉，微调权重直到它们的“元/分”基本一致，之后即可横向比较。</p>
+    </section>
+
+    <!-- 03 评分结果 -->
+    <section class="panel" id="panel-result">
+      <h2 class="ptitle">评分结果</h2>
+      <div class="res-grid" id="resBody" hidden>
+        <div class="res-cell">
+          <span class="lab">综合评分</span>
+          <span class="big" id="rScore">—</span>
+          <span class="dim small">Σ 数值 × 权重</span>
+        </div>
+        <div class="res-cell">
+          <span class="lab">性价比（按总成本）</span>
+          <span class="big" id="rRatio">—</span>
+          <span class="unit">元 / 分（越低越好）</span>
+          <div class="meter-row" id="meterRow" hidden>
+            <div class="meter"><i class="fill" id="meterFill"></i></div>
+          </div>
+          <span class="small dim" id="rDelta">未设参考单价</span>
+        </div>
+        <div class="res-cell">
+          <span class="lab">扣灵尘性价比</span>
+          <span class="big" id="rRatioAdj">—</span>
+          <span class="unit">元 / 分（剔除灵尘投入）</span>
+        </div>
+        <div class="res-cell">
+          <span class="lab">总成本</span>
+          <span class="mid" id="rTotal">—</span>
+          <span class="dim small" id="rCostBreak"></span>
+        </div>
+        <div class="res-cell">
+          <span class="lab">评分 / 百元</span>
+          <span class="mid" id="rPer100">—</span>
+          <span class="dim small">每 100 元总成本买到多少分</span>
+        </div>
+      </div>
+      <div class="empty" id="resEmpty">填入价格与属性数值后，这里会自动给出评分与性价比。</div>
+
+      <div id="resDetail" hidden>
+        <div class="bd-head"><span>属性明细</span><span class="r" style="text-align:right">数值</span><span class="r" style="text-align:right">权重</span><span class="r" style="text-align:right">得分</span><span>占比</span></div>
+        <div id="bdBody"></div>
+      </div>
+
+      <div class="res-foot">
+        <button class="btn primary" id="addCompare" type="button" disabled>加入对比列表</button>
+        <button class="btn" id="exitEdit" type="button" hidden>退出编辑</button>
+        <span class="dim small" id="addHint">填好价格和属性后可加入下方列表横向比较</span>
+      </div>
+    </section>
+
+    <!-- 04 对比列表 -->
+    <section class="panel" id="panel-compare">
+      <h2 class="ptitle">对比列表</h2>
+      <div id="cmpTableWrap" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th class="r">#</th>
+              <th>名称</th>
+              <th class="r sortable" data-k="level" aria-sort="none">等级<span class="arr"></span></th>
+              <th class="r sortable" data-k="price" aria-sort="none">标价(元)<span class="arr"></span></th>
+              <th class="r sortable" data-k="dustYuan" aria-sort="none">另加灵尘(元)<span class="arr"></span></th>
+              <th class="r sortable" data-k="total" aria-sort="none">总成本(元)<span class="arr"></span></th>
+              <th class="r sortable" data-k="S" aria-sort="none">评分<span class="arr"></span></th>
+              <th class="r sortable" data-k="P" aria-sort="none">元/分<span class="arr"></span></th>
+              <th class="r sortable" data-k="Padj" aria-sort="none">扣灵元/分<span class="arr"></span></th>
+              <th class="r">vs 参考</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="cmpEmpty">还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。</div>
+      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复当时的权重与灵尘参数），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。</p>
+      <div class="cmp-foot">
+        <button class="btn" id="clearCompare" type="button" disabled>清空列表</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v6</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- 属性与权重 ---------- */
+// 主属性为百分比词条，权重含义是“每 1% 值多少分”；其余为面板数值词条。
+const BASE_ATTRS = [
+  {k:"resPhys", n:"抗物理暴击(%)",    w:10},
+  {k:"resMag",  n:"抗法术暴击(%)",    w:8},
+  {k:"resSeal", n:"抵抗封印(%)",      w:12},
+  {k:"hpRec",   n:"气血回复效果(%)",  w:6},
+  {k:"dmg",     n:"伤害",             w:1.0},
+  {k:"fdmg",    n:"法术伤害",         w:1.0},
+  {k:"spd",     n:"速度",             w:1.0},
+  {k:"hp",      n:"气血",             w:0.05},
+  {k:"def",     n:"防御",             w:0.5},
+  {k:"mdef",    n:"法术防御",         w:0.4},
+  {k:"pcrit",   n:"物理暴击等级",     w:0.8},
+  {k:"mcrit",   n:"法术暴击等级",     w:0.8},
+  {k:"fix",     n:"固定伤害",         w:0.8},
+  {k:"heal",    n:"治疗能力",         w:0.6},
+  {k:"seal",    n:"封印命中",         w:1.2},
+  {k:"str",     n:"力量",             w:0.7},
+  {k:"agi",     n:"敏捷",             w:0.9},
+  {k:"vit",     n:"体质",             w:0.1},
+  {k:"mag",     n:"魔力",             w:0.2},
+  {k:"end",     n:"耐力",             w:0.25},
+  {k:"mp",      n:"魔法",             w:0.02},
+];
+
+const PRESETS = {
+  balanced: {label:"通用均衡", w:{resPhys:10,resMag:8,resSeal:12,hpRec:6,dmg:1.0,fdmg:1.0,spd:1.0,hp:0.05,def:0.5,mdef:0.4,pcrit:0.8,mcrit:0.8,fix:0.8,heal:0.6,seal:1.2,str:0.7,agi:0.9,vit:0.1,mag:0.2,end:0.25,mp:0.02}},
+  phys:     {label:"物理输出向", w:{resPhys:10,resMag:6,resSeal:4,hpRec:4,dmg:1.2,fdmg:0.1,spd:1.2,hp:0.05,def:0.4,mdef:0.3,pcrit:1.0,mcrit:0.2,fix:0.4,heal:0.1,seal:0.2,str:0.85,agi:1.0,vit:0.12,mag:0,end:0.3,mp:0}},
+  magic:    {label:"法系输出向", w:{resPhys:6,resMag:10,resSeal:4,hpRec:4,dmg:0.3,fdmg:1.2,spd:1.2,hp:0.05,def:0.35,mdef:0.35,pcrit:0.2,mcrit:1.0,fix:0.3,heal:0.5,seal:0.2,str:0,agi:1.0,vit:0.12,mag:0.5,end:0.3,mp:0}},
+  seal:     {label:"封系辅助向", w:{resPhys:10,resMag:10,resSeal:15,hpRec:8,dmg:0.25,fdmg:0.25,spd:1.6,hp:0.08,def:0.55,mdef:0.55,pcrit:0.2,mcrit:0.2,fix:0.1,heal:0.9,seal:2.0,str:0,agi:1.4,vit:0.18,mag:0,end:0.35,mp:0}},
+};
+
+// 官方合成规则：N 级灵尘 = 2 个 (N-1) 级 + 1 个 (N-2) 级 → 单颗 N 级灵尘折合一级灵尘个数
+// （单颗8级=408个、单颗16级≈47万个，与官方/社区数据吻合）
+const DUST_L1 = [0, 1, 2, 5, 12, 29, 70, 169, 408, 985, 2378, 5741, 13860, 33461, 80782, 195025, 470832];
+// 镶嵌规则：只能镶比当前灵尘等级高一级的灵尘（逐级、不能跳级）→ 镶到 N 级 = 1~N 级各一颗
+const DUST_CUM = (() => { const c = [0]; let s = 0; for(let i = 1; i < DUST_L1.length; i++){ s += DUST_L1[i]; c[i] = s; } return c; })();
+
+const LS = {w:"mh.weights", a:"mh.attrs", c:"mh.compare", f:"mh.form", s:"mh.sort"};
+let attrs = BASE_ATTRS.map(a => ({...a}));   // 含自定义词条
+let weights = {};                            // k -> number
+let presetKey = "balanced";
+let customSeq = 0;
+let editingId = null;                        // 正在编辑的对比记录 t
+
+function loadJSON(key, fb){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; }catch(e){ return fb; } }
+function saveJSON(key, v){ try{ localStorage.setItem(key, JSON.stringify(v)); }catch(e){} }
+
+(function init(){
+  const savedAttrs = loadJSON(LS.a, []);
+  savedAttrs.forEach(a => { if(a && a.k && a.n){ attrs.push({...a, custom:true}); } });
+  customSeq = savedAttrs.length;
+  const savedW = loadJSON(LS.w, null);
+  if(savedW && savedW.weights){
+    weights = {...savedW.weights};
+    presetKey = savedW.preset || "custom";
+  }else{
+    presetKey = "balanced";
+    BASE_ATTRS.forEach(a => { weights[a.k] = PRESETS.balanced.w[a.k]; });
+  }
+  BASE_ATTRS.forEach(a => { if(typeof weights[a.k] !== "number") weights[a.k] = PRESETS.balanced.w[a.k]; });
+  attrs.forEach(a => { if(typeof weights[a.k] !== "number") weights[a.k] = 1; });
+})();
+
+/* ---------- 属性行 ---------- */
+const rowsState = []; // {k, v, pending(bool: 运行时状态，自定义未命名)}
+
+function applyPreset(key){
+  presetKey = key;
+  BASE_ATTRS.forEach(a => { weights[a.k] = PRESETS[key].w[a.k]; });
+  persistWeights();
+  renderChips(); renderWeights(); calc(); saveForm();
+}
+function persistWeights(){
+  const customAttrs = attrs.filter(a => a.custom);
+  saveJSON(LS.w, {weights, preset:presetKey});
+  saveJSON(LS.a, customAttrs);
+}
+
+/* ---------- 工具 ---------- */
+function $(id){ return document.getElementById(id); }
+function fmt(x, d){
+  if(x === null || x === undefined || !isFinite(x)) return "—";
+  return (+x).toLocaleString("zh-CN", {maximumFractionDigits: d === undefined ? 2 : d});
+}
+function attrLabel(k){
+  const a = attrs.find(x => x.k === k);
+  return a ? a.n : k;
+}
+function buildOptions(){
+  return attrs.map(a => `<option value="${a.k}">${a.n}</option>`).join("") + `<option value="__custom">自定义…</option>`;
+}
+
+/* ---------- 属性行渲染与交互 ---------- */
+function renderRows(){
+  const box = $("attrRows");
+  box.innerHTML = rowsState.map((r, i) => `
+    <div class="attr-row" data-i="${i}">
+      <select class="in k" aria-label="属性">${buildOptions()}</select>
+      <input class="in cname" type="text" placeholder="属性名称" aria-label="自定义属性名" hidden>
+      <input class="in v" type="number" step="any" placeholder="数值" aria-label="数值">
+      <span class="cscore">—</span>
+      <span class="row-del"><button class="icon-btn del" type="button" aria-label="删除该行">×</button></span>
+    </div>`).join("");
+  rowsState.forEach((r, i) => {
+    const el = box.querySelector(`.attr-row[data-i="${i}"]`);
+    const sel = el.querySelector(".k"), val = el.querySelector(".v");
+    sel.value = r.k;
+    if(!sel.value) sel.value = "__custom";
+    if(sel.value === "__custom"){
+      el.querySelector(".cname").hidden = false;
+      rowsState[i].pending = true;
+    }
+    val.value = r.v;
+  });
+}
+function addRow(k, v){
+  rowsState.push({k: k || "dmg", v: v === undefined ? "" : v});
+  renderRows(); calc(); saveForm();
+}
+function readRows(){
+  const out = [];
+  document.querySelectorAll("#attrRows .attr-row").forEach(el => {
+    const k = el.querySelector(".k").value;
+    const v = parseFloat(el.querySelector(".v").value);
+    if(k === "__custom") return; // 未命名自定义行不参与
+    if(!isNaN(v) && v !== 0) out.push({k, v});
+  });
+  return out;
+}
+
+function commitCustomName(input, i){
+  if(!rowsState[i] || !rowsState[i].pending) return;
+  const name = input.value.trim() || ("自定义" + (customSeq + 1));
+  const key = "c_" + (++customSeq) + "_" + Date.now();
+  attrs.push({k:key, n:name, w:1, custom:true});
+  weights[key] = 1;
+  rowsState[i] = {k:key, v:rowsState[i].v, pending:false};
+  // 刷新所有下拉框并回填
+  document.querySelectorAll("#attrRows .attr-row").forEach(row => {
+    const sel = row.querySelector(".k"); const cur = rowsState[+row.dataset.i].k;
+    sel.innerHTML = buildOptions(); sel.value = cur;
+    row.querySelector(".cname").hidden = rowsState[+row.dataset.i].k !== "__custom";
+  });
+  renderWeights(); persistWeights(); calc(); saveForm();
+}
+$("attrRows").addEventListener("change", e => {
+  const el = e.target.closest(".attr-row"); if(!el) return;
+  const i = +el.dataset.i;
+  if(e.target.classList.contains("k")){
+    if(e.target.value === "__custom"){
+      rowsState[i].pending = true;
+      el.querySelector(".cname").hidden = false;
+      el.querySelector(".cname").focus();
+    }else{
+      rowsState[i].k = e.target.value; rowsState[i].pending = false;
+      el.querySelector(".cname").hidden = true;
+    }
+    calc(); saveForm();
+  }
+  if(e.target.classList.contains("cname")) commitCustomName(e.target, i);
+});
+$("attrRows").addEventListener("focusout", e => {
+  if(!e.target.classList.contains("cname")) return;
+  const el = e.target.closest(".attr-row"); if(!el) return;
+  commitCustomName(e.target, +el.dataset.i);
+});
+$("attrRows").addEventListener("keydown", e => {
+  const row = e.target.closest && e.target.closest(".attr-row"); if(!row) return;
+  if(e.target.classList.contains("cname")){
+    if(e.key === "Enter") commitCustomName(e.target, +row.dataset.i);
+    return;
+  }
+  if(!e.target.classList.contains("v")) return;
+  // 数值框导航：回车 / Tab / ↓ 到下一个，↑ 回上一个；最后一行回车新增一行
+  const rows = [...document.querySelectorAll("#attrRows .attr-row")];
+  const i = rows.indexOf(row);
+  let next = null;
+  if(e.key === "Enter"){
+    next = rows[i + 1];
+    if(!next){
+      addRow();
+      const all = document.querySelectorAll("#attrRows .attr-row");
+      next = all[all.length - 1];
+    }
+  }
+  else if(e.key === "ArrowDown") next = rows[i + 1] || null;
+  else if(e.key === "ArrowUp") next = rows[i - 1] || null;
+  else if(e.key === "Tab") next = rows[i + (e.shiftKey ? -1 : 1)] || null;
+  if(next){
+    e.preventDefault();
+    const inp = next.querySelector(".v");
+    inp.focus(); inp.select();
+  }
+});
+$("attrRows").addEventListener("input", e => {
+  const el = e.target.closest(".attr-row"); if(!el) return;
+  const i = +el.dataset.i;
+  if(e.target.classList.contains("v")){ rowsState[i].v = e.target.value; calc(); saveForm(); }
+});
+$("attrRows").addEventListener("click", e => {
+  const btn = e.target.closest(".del"); if(!btn) return;
+  const i = +btn.closest(".attr-row").dataset.i;
+  rowsState.splice(i, 1);
+  renderRows(); calc(); saveForm();
+});
+$("addRow").addEventListener("click", () => addRow());
+
+/* ---------- 权重面板 ---------- */
+function renderChips(){
+  const box = $("presetChips");
+  box.innerHTML = Object.keys(PRESETS).map(k =>
+    `<button class="chip${presetKey === k ? " on" : ""}" type="button" data-p="${k}">${PRESETS[k].label}</button>`
+  ).join("") + `<button class="chip${presetKey === "custom" ? " on" : ""}" type="button" data-p="custom">自定义微调</button>`;
+  box.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+    if(ch.dataset.p === "custom") return; // 仅作状态显示
+    applyPreset(ch.dataset.p);
+  }));
+}
+function renderWeights(){
+  const box = $("weightRows");
+  box.innerHTML = attrs.map(a => `
+    <div class="w-row" data-k="${a.k}">
+      <span class="lab" title="${a.n}">${a.n}</span>
+      <input class="in w" type="number" step="0.05" min="0" value="${weights[a.k]}" aria-label="${a.n} 权重">
+    </div>`).join("");
+  box.querySelectorAll(".w-row").forEach(row => {
+    row.querySelector(".w").addEventListener("input", e => {
+      const v = parseFloat(e.target.value);
+      weights[row.dataset.k] = isNaN(v) ? 0 : v;
+      presetKey = "custom"; renderChips(); persistWeights(); calc();
+    });
+  });
+}
+
+/* ---------- 计算 ---------- */
+function computeStats(){
+  const price = parseFloat($("jadePrice").value);
+  const bench = parseFloat($("benchPrice").value);
+  const rows = readRows();
+  const parts = rows.map(r => ({label:attrLabel(r.k), v:r.v, w:weights[r.k] ?? 0, c:r.v * (weights[r.k] ?? 0)}));
+  const S = parts.reduce((s, p) => s + p.c, 0);
+  const lv = $("jadeLevel").value;
+  const dustPrice = parseFloat($("dust5").value);
+  const anchorLv = parseInt($("dustAnchor").value, 10);
+  const dustExtra = $("dustExtra").checked;
+  const q = (lv && +lv < DUST_CUM.length) ? DUST_CUM[+lv] : 0; // 镶到该级累计的一级当量
+  const unit1 = (anchorLv >= 1 && anchorLv < DUST_L1.length && dustPrice > 0) ? dustPrice / DUST_L1[anchorLv] : 0; // 一级当量单价（元）
+  const dustWorth = (lv && unit1 > 0) ? q * unit1 : 0;
+  const dustYuan = dustExtra ? dustWorth : 0;
+  const total = (price > 0 ? price : 0) + dustYuan;
+  const valid = price > 0 && parts.length > 0;
+  const hasScore = S > 0;
+  const P = (valid && hasScore && total > 0) ? total / S : null;
+  return {price, bench, rows, parts, S, lv, dustPrice, anchorLv, dustExtra, q, dustWorth, dustYuan, total, valid, hasScore, P};
+}
+
+function calc(){
+  const st = computeStats();
+
+  // 行内得分
+  document.querySelectorAll("#attrRows .attr-row").forEach(el => {
+    const k = el.querySelector(".k").value;
+    const v = parseFloat(el.querySelector(".v").value);
+    const cs = el.querySelector(".cscore");
+    if(k !== "__custom" && !isNaN(v) && v !== 0) cs.textContent = "=" + fmt(v * (weights[k] ?? 0));
+    else cs.textContent = "—";
+  });
+
+  // 灵尘提示
+  const dustWorthTxt = st.dustWorth > 0 ? fmt(st.dustWorth) : null;
+  if(st.lv && st.dustExtra){
+    $("dustHint").textContent = `裸玉另算：镶到 ${st.lv} 级需依次镶嵌 1~${st.lv} 级灵尘各一颗（累计 ≈${fmt(st.q, 0)} 个一级当量）` + (dustWorthTxt ? `，另加约 ${dustWorthTxt} 元进总成本` : "；填入灵尘市价后折算金额");
+  }else if(st.lv){
+    $("dustHint").textContent = `已镶 ${st.lv} 级灵尘（逐级镶嵌，累计 ≈${fmt(st.q, 0)} 个一级当量）` + (dustWorthTxt ? `，投入约 ${dustWorthTxt} 元已含在标价内，总成本即标价` : "；填入灵尘市价后显示参考价值");
+  }else if(st.dustPrice > 0){
+    $("dustHint").textContent = "已填灵尘市价 " + fmt(st.dustPrice) + " 元/颗（" + st.anchorLv + " 级）——还需选择「灵尘等级」：成品玉填已镶到的等级，裸玉填打算镶到的等级并勾选「裸玉另算灵尘」。";
+  }else{
+    $("dustHint").textContent = "选择灵尘等级并填入灵尘市价后，自动按官方规则折算灵尘价值。";
+  }
+
+  // 结果区
+  $("resBody").hidden = !st.valid;
+  $("resEmpty").hidden = st.valid;
+  $("addCompare").disabled = !(st.valid && st.hasScore);
+  updateHint(st);
+
+  if(!st.valid) return;
+
+  $("rScore").textContent = fmt(st.S);
+  $("rRatio").textContent = st.hasScore ? fmt(st.P) : "—";
+  $("rRatio").className = "big" + (st.hasScore && st.bench > 0 ? (st.P <= st.bench ? " good" : " bad") : "");
+  const denomAdj = st.total - st.dustWorth; // 剔除灵尘投入后的玉体价格
+  $("rRatioAdj").textContent = (st.hasScore && denomAdj > 0) ? fmt(denomAdj / st.S) : "—";
+  $("rPer100").textContent = st.hasScore ? fmt(st.S / st.total * 100, 2) : "—";
+
+  $("rTotal").textContent = fmt(st.total, 0) + " 元";
+  $("rCostBreak").textContent = st.dustYuan > 0
+    ? `标价 ${fmt(st.price, 0)} + 灵尘 ${fmt(st.dustYuan, 0)}`
+    : (st.lv && dustWorthTxt ? `标价已含约 ${dustWorthTxt} 元灵尘`
+      : (!st.lv && st.dustPrice > 0 ? "未选灵尘等级" : "仅标价"));
+
+  if(st.bench > 0 && st.hasScore){
+    $("meterRow").hidden = false;
+    $("meterFill").style.setProperty("--w", Math.min(100, st.bench / st.P * 100).toFixed(1) + "%");
+    const diff = (st.P - st.bench) / st.bench * 100;
+    if(diff <= 0){ $("rDelta").textContent = "低于参考 " + fmt(-diff, 1) + "%"; $("rDelta").className = "small good"; }
+    else{ $("rDelta").textContent = "高于参考 " + fmt(diff, 1) + "%"; $("rDelta").className = "small bad"; }
+  }else{
+    $("meterRow").hidden = true;
+    $("rDelta").textContent = "未设参考单价";
+    $("rDelta").className = "small dim";
+  }
+
+  // 明细（按得分降序）
+  const shown = st.parts.filter(p => p.c !== 0).sort((a, b) => b.c - a.c);
+  $("resDetail").hidden = shown.length === 0;
+  $("bdBody").innerHTML = shown.map(p => `
+    <div class="bd-row">
+      <span class="dim">${p.label}</span>
+      <span class="num val">${fmt(p.v)}</span>
+      <span class="num wt">×${fmt(p.w)}</span>
+      <span class="num sc">${fmt(p.c)}</span>
+      <span class="bd-bar"><i style="width:${(p.c / st.S * 100).toFixed(1)}%"></i></span>
+    </div>`).join("");
+}
+
+function updateHint(st){
+  const el = $("addHint");
+  let base;
+  if(!st || !st.valid) base = "填好价格和属性后可加入下方列表横向比较";
+  else if(!st.hasScore) base = "有效评分为 0：请检查数值是否填写、对应权重是否为 0";
+  else base = "";
+  if(editingId){
+    const e = compare.find(x => x.t === editingId);
+    const nm = e ? (e.name || attrSummary(e)) : "记录";
+    if(e && !(e.attrs && e.attrs.length)){
+      el.textContent = `正在编辑「${nm}」 · 这是旧版记录，当时未保存属性数值：请在左侧重新填写属性，再点“更新该记录”即可补全`;
+    }else{
+      el.textContent = `正在编辑「${nm}」` + (base ? " · " + base : "") + "；改完点“更新该记录”保存";
+    }
+  }else{
+    el.textContent = base || "填好价格和属性后可加入下方列表横向比较";
+  }
+}
+
+/* ---------- 对比列表 ---------- */
+let compare = loadJSON(LS.c, []);
+function saveCompare(){ saveJSON(LS.c, compare); }
+
+const SORT_DIRS = {level:1, price:1, dustYuan:1, total:1, S:-1, P:1, Padj:1};
+let sortState = loadJSON(LS.s, null);
+if(!sortState || !SORT_DIRS[sortState.key] || ![1,-1].includes(sortState.dir)) sortState = {key:"P", dir:1};
+
+function cmpVal(e, k){
+  const v = parseFloat(e[k]);
+  return isNaN(v) ? null : v;
+}
+// 灵尘价格为全局市场参数：改一处，勾了"裸玉另算灵尘"的记录按各自等级实时重算
+function dustCostOf(level){
+  const lv = (level && +level < DUST_CUM.length) ? +level : 0;
+  if(!lv) return 0;
+  const anchorLv = parseInt($("dustAnchor").value, 10);
+  const dustPrice = parseFloat($("dust5").value);
+  if(!(dustPrice > 0) || !(anchorLv >= 1 && anchorLv < DUST_L1.length)) return 0;
+  return DUST_CUM[lv] / DUST_L1[anchorLv] * dustPrice;
+}
+function enrichEntry(e){
+  const worth = dustCostOf(e.level); // 灵尘参考价值（按当前五级价）
+  const dustYuan = e.dustExtra ? worth : 0; // 成品玉灵尘已含在标价内，不另加
+  const price = parseFloat(e.price) > 0 ? parseFloat(e.price) : 0;
+  const total = price + dustYuan;
+  const S = parseFloat(e.S);
+  const P = (isFinite(S) && S > 0 && total > 0) ? total / S : null;
+  const denomAdj = total - worth; // 剔除灵尘投入后的玉体价格
+  const Padj = (isFinite(S) && S > 0 && denomAdj > 0) ? denomAdj / S : null;
+  return {...e, price, dustYuan, total, P, Padj};
+}
+
+function attrSummary(e){
+  if(!e.attrs || !e.attrs.length) return "未命名记录";
+  const parts = e.attrs.map(a => ({n:attrLabel(a.k), v:a.v, c:a.v * ((e.w && e.w[a.k]) ?? weights[a.k] ?? 0)}))
+    .filter(p => p.c !== 0).sort((a, b) => b.c - a.c).slice(0, 3);
+  if(!parts.length) return "未命名记录";
+  return parts.map(p => `${p.n}${fmt(p.v)}`).join("·");
+}
+
+function renderCompare(){
+  const bench = parseFloat($("benchPrice").value);
+  const list = compare.map(enrichEntry).sort((a, b) => {
+    const av = cmpVal(a, sortState.key), bv = cmpVal(b, sortState.key);
+    if(av === null && bv === null) return 0;
+    if(av === null) return 1;  // 缺值沉底
+    if(bv === null) return -1;
+    return (av - bv) * sortState.dir;
+  });
+  const finites = list.filter(e => isFinite(e.P)).map(e => e.P);
+  const minP = finites.length ? Math.min(...finites) : null;
+  $("cmpTableWrap").hidden = list.length === 0;
+  $("cmpEmpty").hidden = list.length !== 0;
+  $("cmpHint").hidden = list.length === 0;
+  $("clearCompare").disabled = list.length === 0;
+  $("cmpBody").innerHTML = list.map((e, i) => {
+    const d = bench > 0 && isFinite(e.P) ? (e.P - bench) / bench * 100 : null;
+    const dTxt = d === null ? "—" : (d <= 0 ? `<span class="good">低 ${fmt(-d, 1)}%</span>` : `<span class="bad">高 ${fmt(d, 1)}%</span>`);
+    const hasAttrs = e.attrs && e.attrs.length;
+    const attrLine = hasAttrs ? attrSummary(e) : "旧记录 · 未存属性数值";
+    const cls = (isFinite(e.P) && e.P === minP ? "best" : "") + (editingId === e.t ? " editing" : "");
+    return `<tr class="${cls}" data-t="${e.t}" tabindex="0" aria-label="${(e.name || attrSummary(e)).replace(/"/g, "")}，元每分${fmt(e.P)}">
+      <td class="r dim">${i + 1}</td>
+      <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
+      <td class="r dim">${e.level || "—"}</td>
+      <td class="r">${fmt(e.price, 0)}</td>
+      <td class="r dim">${e.dustYuan ? fmt(e.dustYuan, 0) : "—"}</td>
+      <td class="r">${fmt(e.total ?? e.price, 0)}</td>
+      <td class="r">${fmt(e.S)}</td>
+      <td class="r">${fmt(e.P)}</td>
+      <td class="r">${fmt(e.Padj)}</td>
+      <td class="r">${dTxt}</td>
+      <td class="r"><button class="icon-btn del" type="button" data-t="${e.t}" aria-label="删除该记录">×</button></td>
+    </tr>`;
+  }).join("");
+  document.querySelectorAll("#panel-compare th.sortable").forEach(th => {
+    const active = sortState.key === th.dataset.k;
+    th.classList.toggle("on", active);
+    th.setAttribute("aria-sort", active ? (sortState.dir === 1 ? "ascending" : "descending") : "none");
+    const arr = th.querySelector(".arr");
+    if(arr) arr.textContent = active ? (sortState.dir === 1 ? "▲" : "▼") : "";
+  });
+}
+document.querySelector("#panel-compare thead").addEventListener("click", e => {
+  const th = e.target.closest("th.sortable"); if(!th) return;
+  if(sortState.key === th.dataset.k) sortState.dir = -sortState.dir;
+  else { sortState.key = th.dataset.k; sortState.dir = SORT_DIRS[th.dataset.k] || 1; }
+  saveJSON(LS.s, sortState);
+  renderCompare();
+});
+
+$("addCompare").addEventListener("click", () => {
+  const st = computeStats();
+  if(!(st.valid && st.hasScore)) return;
+  const entry = {
+    t: Date.now() + "" + Math.floor(Math.random() * 1000),
+    name: $("jadeName").value.trim(),
+    level: st.lv,
+    price: st.price,
+    dustExtra: st.dustExtra,
+    attrs: st.rows.map(r => ({k:r.k, v:r.v})),
+    w: {...weights},
+    S: st.S,
+  };
+  if(editingId){
+    const i = compare.findIndex(x => x.t === editingId);
+    if(i >= 0){ entry.t = editingId; compare[i] = entry; }
+    else compare.push(entry);
+    exitEdit();
+  }else{
+    compare.push(entry);
+  }
+  saveCompare(); renderCompare();
+});
+
+$("cmpBody").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-t]"); if(!tr) return;
+  const t = tr.dataset.t;
+  if(e.target.closest(".del")){
+    compare = compare.filter(x => x.t !== t);
+    if(editingId === t) exitEdit();
+    saveCompare(); renderCompare();
+    return;
+  }
+  const entry = compare.find(x => x.t === t);
+  if(entry) loadRecord(entry);
+});
+$("cmpBody").addEventListener("keydown", e => {
+  const tr = e.target.closest && e.target.closest("tr[data-t]"); if(!tr) return;
+  if(e.key !== "Enter" && e.key !== " ") return;
+  e.preventDefault();
+  const entry = compare.find(x => x.t === tr.dataset.t);
+  if(entry) loadRecord(entry);
+});
+
+function loadRecord(e){
+  editingId = e.t;
+  $("jadeName").value = e.name || "";
+  $("jadeLevel").value = e.level || "";
+  $("jadePrice").value = e.price ?? "";
+  $("dustExtra").checked = !!e.dustExtra;
+  if(e.w){
+    weights = {...e.w};
+    BASE_ATTRS.forEach(a => { if(typeof weights[a.k] !== "number") weights[a.k] = PRESETS.balanced.w[a.k]; });
+    attrs.forEach(a => { if(typeof weights[a.k] !== "number") weights[a.k] = 1; });
+    presetKey = "custom";
+    renderChips(); renderWeights(); persistWeights();
+  }
+  rowsState.length = 0;
+  (e.attrs && e.attrs.length ? e.attrs : [{k:"dmg", v:""}, {k:"spd", v:""}, {k:"hp", v:""}])
+    .forEach(r => rowsState.push({k:r.k || "dmg", v:r.v ?? "", pending:false}));
+  renderRows();
+  $("exitEdit").hidden = false;
+  $("addCompare").textContent = "更新该记录";
+  calc(); saveForm(); renderCompare();
+  $("panel-input").scrollIntoView({block:"start"});
+}
+function exitEdit(){
+  editingId = null;
+  $("exitEdit").hidden = true;
+  $("addCompare").textContent = "加入对比列表";
+  renderCompare(); calc();
+}
+$("exitEdit").addEventListener("click", exitEdit);
+
+$("clearCompare").addEventListener("click", () => {
+  if(!compare.length) return;
+  if(confirm("确定清空对比列表？")){ compare = []; editingId = null; $("exitEdit").hidden = true; $("addCompare").textContent = "加入对比列表"; saveCompare(); renderCompare(); calc(); }
+});
+
+/* ---------- 表单持久化 ---------- */
+function saveForm(){
+  saveJSON(LS.f, {
+    name:$("jadeName").value, level:$("jadeLevel").value,
+    price:$("jadePrice").value, bench:$("benchPrice").value,
+    dust5:$("dust5").value, dustAnchor:$("dustAnchor").value, dustExtra:$("dustExtra").checked,
+    rows: rowsState.map(r => ({k:r.k, v:r.v})),
+  });
+}
+function loadForm(){
+  const f = loadJSON(LS.f, null);
+  if(f){
+    $("jadeName").value = f.name || ""; $("jadeLevel").value = f.level || "";
+    $("jadePrice").value = f.price ?? ""; $("benchPrice").value = f.bench ?? "";
+    if(f.dust5 !== undefined && f.dust5 !== "") $("dust5").value = f.dust5;
+    if(f.dustAnchor) $("dustAnchor").value = f.dustAnchor;
+    $("dustExtra").checked = !!f.dustExtra;
+    (f.rows && f.rows.length ? f.rows : [{k:"dmg", v:""}, {k:"spd", v:""}, {k:"hp", v:""}])
+      .forEach(r => rowsState.push({k: r.k || "dmg", v: r.v ?? "", pending: false}));
+  }else{
+    [{k:"dmg"}, {k:"spd"}, {k:"hp"}].forEach(r => rowsState.push({k:r.k, v:""}));
+  }
+}
+
+["jadeName","jadeLevel","jadePrice","benchPrice","dust5","dustAnchor"].forEach(id => {
+  $(id).addEventListener("input", () => { calc(); renderCompare(); saveForm(); });
+  $(id).addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
+});
+$("dustExtra").addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
+
+/* ---------- 启动 ---------- */
+loadForm();
+renderRows();
+renderChips();
+renderWeights();
+calc();
+renderCompare();
+</script>
+</body>
+</html>
