@@ -891,7 +891,49 @@ function mapAttrName(n){
   return null;
 }
 function parseCBGText(text){
-  let t = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
+  const raw = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
+  // 优先：制表符行模式（藏宝阁列表整表复制）——按行内 ¥ 定位价格，相对位置取灵尘等级/属性，避免缩略图列错位
+  const lines = raw.split(/\n+/).map(l => l.replace(/\r/g, "")).filter(l => l.trim());
+  const levelCellRe = /^\d{1,2}(?:\s*\[[^\]]*\])?$/;
+  const serverReC = /([\u4e00-\u9fa5]{2,12}\d*区[-—–][\u4e00-\u9fa5]{2,12})/;
+  const colOut = [];
+  for(const line of lines){
+    const cells = line.split("\t").map(c => c.trim());
+    const p = cells.findIndex(c => /¥/.test(c));
+    if(p < 0) continue;
+    const pm = /¥\s*([\d,]+(?:\.\d+)?)/.exec(cells[p]);
+    if(!pm) continue;
+    const price = parseFloat(pm[1].replace(/,/g, ""));
+    let fee = 0;
+    const fmC = /跨服[费手续：:\s]*[￥¥]?\s*([\d,]+(?:\.\d+)?)/.exec(cells[p] + "  " + cells.slice(p + 1).join("  "));
+    if(fmC) fee = parseFloat(fmC[1].replace(/,/g, ""));
+    // 布局（综合排序/基础属性/附加属性/灵尘等级/特效/价格）：灵尘等级在价格前第 2 格
+    let level = "";
+    let levelIdx = -1;
+    for(let i = p - 2; i >= Math.max(0, p - 6); i--){
+      if(levelCellRe.test(cells[i] || "")){ levelIdx = i; break; }
+    }
+    if(levelIdx >= 0){
+      const lm = /^(\d{1,2})/.exec(cells[levelIdx]);
+      level = lm ? (parseInt(lm[1], 10) || "") : "";
+    }
+    const attrs = [];
+    const attrCells = levelIdx >= 0 ? [cells[levelIdx - 2], cells[levelIdx - 1]] : [];
+    for(const cell of attrCells){
+      let mm; const attrReC = /([\u4e00-\u9fa5]{2,8})\s*\+?\s*(\d+(?:\.\d+)?)/g;
+      while((mm = attrReC.exec(cell || ""))){
+        if(IMPORT_SKIP.test(mm[1])) continue;
+        const k = mapAttrName(mm[1]);
+        const v = parseFloat(mm[2]);
+        if(k && v) attrs.push({k, v});
+      }
+    }
+    const sm = serverReC.exec(cells.slice(p + 1).join("  "));
+    colOut.push({attrs, level, price, fee, server: sm ? sm[1] : ""});
+  }
+  if(colOut.length) return colOut;
+  // 回退：自由文本的价格锚点解析
+  let t = raw;
   // 先把“跨服费¥xx”从文本里等长挖除：它的 ¥ 不能被当成另一条记录的价格锚点
   const fees = []; let fm;
   const feeReG = /跨服[费手续：:\s]*[￥¥]?\s*([\d,]+(?:\.\d+)?)/g;
