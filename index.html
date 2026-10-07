@@ -153,7 +153,18 @@
   .cname.unnamed{color:var(--dim)}
   .attr-line{display:block;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
   tr.best .cname{color:var(--green)}
-  .cmp-foot{display:flex;justify-content:flex-end;margin-top:10px}
+  .cmp-foot{display:flex;justify-content:flex-end;margin-top:10px;gap:8px}
+
+  /* 批量导入浮层 */
+  .overlay{position:fixed;inset:0;background:rgba(4,7,12,.72);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .sheet{width:min(880px,94vw);max-height:88vh;overflow:auto;background:var(--surface);border:1px solid var(--border-strong);padding:16px}
+  .sheet h3{margin:0 0 8px;font-size:14px;color:var(--amber);letter-spacing:.06em}
+  .sheet textarea.in{height:auto;min-height:110px;line-height:1.6;resize:vertical;font-size:12px}
+  .imp-actions{display:flex;gap:8px;margin-top:8px}
+  .imp-rec{border:1px solid var(--border);background:var(--surface-2);padding:8px 10px;margin-top:8px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+  .imp-rec .attr-line{max-width:none}
+  .imp-rec .num{color:var(--text)}
+  .imp-empty{border:1px dashed var(--border-strong);color:var(--dim);text-align:center;padding:18px;margin-top:8px;font-size:12px}
 
   footer{margin-top:24px;color:#46536b;font-size:11px;text-align:center}
 </style>
@@ -170,9 +181,15 @@
     <!-- 01 玉信息与属性 -->
     <section class="panel" id="panel-input">
       <h2 class="ptitle">玉信息与属性</h2>
-      <div class="frow1">
-        <label class="lab" for="jadeName">名称（选填）</label>
-        <input class="in" id="jadeName" type="text" placeholder="例如：上古玉魄·阳 三伤害">
+      <div class="frow">
+        <div>
+          <label class="lab" for="jadeName">名称（选填）</label>
+          <input class="in" id="jadeName" type="text" placeholder="例如：上古玉魄·阳 三伤害">
+        </div>
+        <div>
+          <label class="lab" for="jadeServer">服务器（选填）</label>
+          <input class="in" id="jadeServer" type="text" placeholder="广东4区-状元坊">
+        </div>
       </div>
       <div class="frow">
         <div>
@@ -302,13 +319,27 @@
       <div class="empty" id="cmpEmpty">还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。</div>
       <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复当时的权重与灵尘参数），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。</p>
       <div class="cmp-foot">
+        <button class="btn" id="openImport" type="button">批量导入（藏宝阁）</button>
         <button class="btn" id="clearCompare" type="button" disabled>清空列表</button>
       </div>
     </section>
 
   </main>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v6</footer>
+  <div class="overlay" id="importOverlay" hidden>
+    <div class="sheet">
+      <h3>批量导入 · 藏宝阁</h3>
+      <p class="hint">在藏宝阁列表页选中要导入的行，复制（Ctrl+C）后粘贴到下面——含表头也没关系。每条记录至少要有价格（如 ¥1566.00）和属性（如 速度 +8）；解析后逐条确认再入表。导入的记录按成品玉口径：总成本 = 标价。识别不准的就别加，或者回左侧手动录。</p>
+      <textarea class="in" id="importText" rows="6" placeholder="粘贴到这里……"></textarea>
+      <div class="imp-actions">
+        <button class="btn primary" id="parseImport" type="button">解析预览</button>
+        <button class="btn" id="closeImport" type="button">关闭</button>
+      </div>
+      <div id="importPreview"></div>
+    </div>
+  </div>
+
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v7</footer>
 </div>
 
 <script>
@@ -725,7 +756,7 @@ function renderCompare(){
     const cls = (isFinite(e.P) && e.P === minP ? "best" : "") + (editingId === e.t ? " editing" : "");
     return `<tr class="${cls}" data-t="${e.t}" tabindex="0" aria-label="${(e.name || attrSummary(e)).replace(/"/g, "")}，元每分${fmt(e.P)}">
       <td class="r dim">${i + 1}</td>
-      <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
+      <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}${e.server ? `<span class="dim small"> · ${e.server}</span>` : ""}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
       <td class="r dim">${e.level || "—"}</td>
       <td class="r">${fmt(e.price, 0)}</td>
       <td class="r dim">${e.dustYuan ? fmt(e.dustYuan, 0) : "—"}</td>
@@ -759,6 +790,7 @@ $("addCompare").addEventListener("click", () => {
   const entry = {
     t: Date.now() + "" + Math.floor(Math.random() * 1000),
     name: $("jadeName").value.trim(),
+    server: $("jadeServer").value.trim(),
     level: st.lv,
     price: st.price,
     dustExtra: st.dustExtra,
@@ -800,6 +832,7 @@ $("cmpBody").addEventListener("keydown", e => {
 function loadRecord(e){
   editingId = e.t;
   $("jadeName").value = e.name || "";
+  $("jadeServer").value = e.server || "";
   $("jadeLevel").value = e.level || "";
   $("jadePrice").value = e.price ?? "";
   $("dustExtra").checked = !!e.dustExtra;
@@ -832,10 +865,106 @@ $("clearCompare").addEventListener("click", () => {
   if(confirm("确定清空对比列表？")){ compare = []; editingId = null; $("exitEdit").hidden = true; $("addCompare").textContent = "加入对比列表"; saveCompare(); renderCompare(); calc(); }
 });
 
+/* ---------- 批量导入 · 藏宝阁文本 ---------- */
+const ATTR_DICT = [
+  ["法术伤害","fdmg"],["法术防御","mdef"],["固定伤害","fix"],["物理暴击","pcrit"],
+  ["法术暴击","mcrit"],["抵抗封印","resSeal"],["抗物理暴击","resPhys"],["抗法术暴击","resMag"],
+  ["气血回复","hpRec"],["治疗能力","heal"],["封印命中","seal"],["伤害","dmg"],
+  ["速度","spd"],["气血","hp"],["魔法","mp"],["防御","def"],
+  ["力量","str"],["敏捷","agi"],["体质","vit"],["魔力","mag"],["耐力","end"],
+];
+const IMPORT_SKIP = /(综合排序|基础属性|附加属性|灵尘等级|特效|出售剩余|查看详情|时间|价格|服务器|等级)/;
+function mapAttrName(n){
+  for(const [t, k] of ATTR_DICT){ if(n.indexOf(t) >= 0) return k; }
+  return null;
+}
+function parseCBGText(text){
+  const t = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
+  const priceRe = /¥\s*([\d,]+(?:\.\d+)?)/g;
+  const anchors = []; let m;
+  while((m = priceRe.exec(t))) anchors.push({price: parseFloat(m[1].replace(/,/g, "")), start: m.index, end: m.index + m[0].length});
+  if(!anchors.length) return [];
+  const segs = anchors.map((a, i) => ({
+    price: a.price,
+    before: t.slice(i === 0 ? 0 : anchors[i-1].end, a.start),
+    after: t.slice(a.end, i + 1 < anchors.length ? anchors[i+1].start : t.length),
+  }));
+  const attrRe = /([\u4e00-\u9fa5]{2,8})\s*\+?\s*(\d+(?:\.\d+)?)/g;
+  const serverRe = /([\u4e00-\u9fa5]{2,12}\d*区[-—–][\u4e00-\u9fa5]{2,12})/;
+  const levelRe = /灵尘等级\s*[:：]?\s*(\d{1,2})/;
+  const out = [];
+  for(const s of segs){
+    const attrs = []; let mm;
+    attrRe.lastIndex = 0;
+    while((mm = attrRe.exec(s.before))){
+      if(IMPORT_SKIP.test(mm[1])) continue;
+      const k = mapAttrName(mm[1]);
+      const v = parseFloat(mm[2]);
+      if(k && v) attrs.push({k, v});
+    }
+    if(!attrs.length && !(s.price > 0)) continue;
+    const sm = serverRe.exec(s.after);
+    const lm = levelRe.exec(s.before);
+    out.push({
+      attrs,
+      level: lm ? (parseInt(lm[1], 10) || "") : "",
+      price: s.price,
+      server: sm ? sm[1] : "",
+    });
+  }
+  return out;
+}
+let lastParsed = [];
+let importedFlags = [];
+function addImportRecord(i, silent){
+  if(importedFlags[i]) return;
+  const r = lastParsed[i];
+  const S = r.attrs.reduce((s, a) => s + a.v * (weights[a.k] ?? 0), 0);
+  if(!(r.price > 0) || !(S > 0)){ if(!silent) alert("该记录评分为 0（属性没识别到或权重为 0），请检查"); return; }
+  compare.push({
+    t: Date.now() + "" + Math.floor(Math.random() * 1000),
+    name: "", level: r.level, price: r.price, server: r.server,
+    dustExtra: false, // 藏宝阁成品玉：总成本 = 标价
+    attrs: r.attrs, w: {...weights}, S,
+  });
+  importedFlags[i] = true;
+  saveCompare(); renderCompare();
+}
+function renderImportPreview(){
+  const box = $("importPreview");
+  if(!lastParsed.length){
+    box.innerHTML = `<div class="imp-empty">没解析到记录：确认文本里有价格（如 ¥1566.00）和属性（如 速度 +8）。</div>`;
+    return;
+  }
+  const rows = lastParsed.map((r, i) => {
+    const attrTxt = r.attrs.map(a => `${attrLabel(a.k)}+${fmt(a.v)}`).join(" · ") || "（无属性）";
+    const done = importedFlags[i];
+    return `<div class="imp-rec">
+      <div>
+        <div class="attr-line"><span class="cname">${attrTxt}</span></div>
+        <div class="attr-line dim">价格 ${fmt(r.price, 2)} 元${r.level !== "" ? " · 灵尘 " + r.level + " 级" : ""}${r.server ? " · " + r.server : ""}</div>
+      </div>
+      <button class="btn${done ? "" : " primary"}" type="button" data-i="${i}"${done ? " disabled" : ""}>${done ? "已加入 ✓" : "加入对比"}</button>
+    </div>`;
+  }).join("");
+  const allDone = importedFlags.every(Boolean);
+  box.innerHTML = rows + `<div class="imp-actions"><button class="btn primary" id="addImportAll" type="button"${allDone ? " disabled" : ""}>全部加入对比</button></div>`;
+  box.querySelectorAll("button[data-i]").forEach(b => b.addEventListener("click", () => { addImportRecord(+b.dataset.i); renderImportPreview(); }));
+  const all = document.getElementById("addImportAll");
+  if(all) all.addEventListener("click", () => { lastParsed.forEach((r, i) => addImportRecord(i, true)); renderImportPreview(); });
+}
+$("openImport").addEventListener("click", () => { $("importOverlay").hidden = false; $("importText").focus(); });
+$("closeImport").addEventListener("click", () => { $("importOverlay").hidden = true; });
+$("parseImport").addEventListener("click", () => {
+  lastParsed = parseCBGText($("importText").value);
+  importedFlags = lastParsed.map(() => false);
+  renderImportPreview();
+});
+
 /* ---------- 表单持久化 ---------- */
 function saveForm(){
   saveJSON(LS.f, {
-    name:$("jadeName").value, level:$("jadeLevel").value,
+    name:$("jadeName").value, server:$("jadeServer").value, level:$("jadeLevel").value,
     price:$("jadePrice").value, bench:$("benchPrice").value,
     dust5:$("dust5").value, dustAnchor:$("dustAnchor").value, dustExtra:$("dustExtra").checked,
     rows: rowsState.map(r => ({k:r.k, v:r.v})),
@@ -844,7 +973,7 @@ function saveForm(){
 function loadForm(){
   const f = loadJSON(LS.f, null);
   if(f){
-    $("jadeName").value = f.name || ""; $("jadeLevel").value = f.level || "";
+    $("jadeName").value = f.name || ""; $("jadeServer").value = f.server || ""; $("jadeLevel").value = f.level || "";
     $("jadePrice").value = f.price ?? ""; $("benchPrice").value = f.bench ?? "";
     if(f.dust5 !== undefined && f.dust5 !== "") $("dust5").value = f.dust5;
     if(f.dustAnchor) $("dustAnchor").value = f.dustAnchor;
@@ -856,7 +985,7 @@ function loadForm(){
   }
 }
 
-["jadeName","jadeLevel","jadePrice","benchPrice","dust5","dustAnchor"].forEach(id => {
+["jadeName","jadeServer","jadeLevel","jadePrice","benchPrice","dust5","dustAnchor"].forEach(id => {
   $(id).addEventListener("input", () => { calc(); renderCompare(); saveForm(); });
   $(id).addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
 });
