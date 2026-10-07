@@ -90,6 +90,8 @@
   .frow{display:grid;grid-template-columns:1fr 130px;gap:8px;margin-top:8px}
   .frow1{margin-top:8px}
   .frow label,.frow1>label{display:block;margin-bottom:3px}
+  .frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+  .frow3>div>label{display:block;margin-bottom:3px}
   th.sortable{cursor:pointer;user-select:none}
   th.sortable:hover{color:var(--text)}
   th.on{color:var(--text)}
@@ -191,7 +193,7 @@
           <input class="in" id="jadeServer" type="text" placeholder="广东4区-状元坊">
         </div>
       </div>
-      <div class="frow">
+      <div class="frow3">
         <div>
           <label class="lab" for="jadeLevel">灵尘等级</label>
           <select class="in" id="jadeLevel">
@@ -204,6 +206,10 @@
         <div>
           <label class="lab" for="jadePrice">价格（元）<span class="unit">¥</span></label>
           <input class="in" id="jadePrice" type="number" min="0" step="any" placeholder="如 2400">
+        </div>
+        <div>
+          <label class="lab" for="jadeFee">跨服费（元，选填）</label>
+          <input class="in" id="jadeFee" type="number" min="0" step="any" placeholder="跨区购买才有">
         </div>
       </div>
       <div class="frow3b">
@@ -339,7 +345,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v8</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v9</footer>
 </div>
 
 <script>
@@ -596,11 +602,12 @@ function computeStats(){
   const unit1 = (anchorLv >= 1 && anchorLv < DUST_L1.length && dustPrice > 0) ? dustPrice / DUST_L1[anchorLv] : 0; // 一级当量单价（元）
   const dustWorth = (lv && unit1 > 0) ? q * unit1 : 0;
   const dustYuan = dustExtra ? dustWorth : 0;
-  const total = (price > 0 ? price : 0) + dustYuan;
+  const fee = parseFloat($("jadeFee").value);
+  const total = (price > 0 ? price : 0) + dustYuan + (fee > 0 ? fee : 0);
   const valid = price > 0 && parts.length > 0;
   const hasScore = S > 0;
   const P = (valid && hasScore && total > 0) ? total / S : null;
-  return {price, bench, rows, parts, S, lv, dustPrice, anchorLv, dustExtra, q, dustWorth, dustYuan, total, valid, hasScore, P};
+  return {price, bench, rows, parts, S, lv, dustPrice, anchorLv, dustExtra, q, dustWorth, dustYuan, fee, total, valid, hasScore, P};
 }
 
 function calc(){
@@ -643,8 +650,9 @@ function calc(){
   $("rPer100").textContent = st.hasScore ? fmt(st.S / st.total * 100, 2) : "—";
 
   $("rTotal").textContent = fmt(st.total, 0) + " 元";
-  $("rCostBreak").textContent = st.dustYuan > 0
-    ? `标价 ${fmt(st.price, 0)} + 灵尘 ${fmt(st.dustYuan, 0)}`
+  const extras = [st.dustYuan > 0 ? "灵尘 " + fmt(st.dustYuan, 0) : null, st.fee > 0 ? "跨服费 " + fmt(st.fee, 0) : null].filter(Boolean);
+  $("rCostBreak").textContent = extras.length
+    ? `标价 ${fmt(st.price, 0)} + ` + extras.join(" + ")
     : (st.lv && dustWorthTxt ? `标价已含约 ${dustWorthTxt} 元灵尘`
       : (!st.lv && st.dustPrice > 0 ? "未选灵尘等级" : "仅标价"));
 
@@ -717,7 +725,8 @@ function enrichEntry(e){
   const worth = dustCostOf(e.level); // 灵尘参考价值（按当前市价）
   const dustYuan = e.dustExtra ? worth : 0; // 成品玉灵尘已含在标价内，不另加
   const price = parseFloat(e.price) > 0 ? parseFloat(e.price) : 0;
-  const total = price + dustYuan;
+  const fee = parseFloat(e.fee) > 0 ? parseFloat(e.fee) : 0;
+  const total = price + dustYuan + fee;
   // 评分按当前权重实时重算（权重是全局参数；无属性快照的旧记录退回存档分）
   const S = (e.attrs && e.attrs.length)
     ? e.attrs.reduce((s, a) => s + a.v * (weights[a.k] ?? 0), 0)
@@ -761,7 +770,7 @@ function renderCompare(){
       <td class="r dim">${i + 1}</td>
       <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}${e.server ? `<span class="dim small"> · ${e.server}</span>` : ""}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
       <td class="r dim">${e.level || "—"}</td>
-      <td class="r">${fmt(e.price, 0)}</td>
+      <td class="r">${fmt(e.price, 0)}${e.fee > 0 ? `<span class="attr-line dim">跨服费 ${fmt(e.fee, 0)}</span>` : ""}</td>
       <td class="r dim">${e.dustYuan ? fmt(e.dustYuan, 0) : "—"}</td>
       <td class="r">${fmt(e.total ?? e.price, 0)}</td>
       <td class="r">${fmt(e.S)}</td>
@@ -796,6 +805,7 @@ $("addCompare").addEventListener("click", () => {
     server: $("jadeServer").value.trim(),
     level: st.lv,
     price: st.price,
+    fee: st.fee,
     dustExtra: st.dustExtra,
     attrs: st.rows.map(r => ({k:r.k, v:r.v})),
   };
@@ -836,6 +846,7 @@ function loadRecord(e){
   $("jadeServer").value = e.server || "";
   $("jadeLevel").value = e.level || "";
   $("jadePrice").value = e.price ?? "";
+  $("jadeFee").value = e.fee > 0 ? e.fee : "";
   $("dustExtra").checked = !!e.dustExtra;
   rowsState.length = 0;
   (e.attrs && e.attrs.length ? e.attrs : [{k:"dmg", v:""}, {k:"spd", v:""}, {k:"hp", v:""}])
@@ -873,16 +884,32 @@ function mapAttrName(n){
   return null;
 }
 function parseCBGText(text){
-  const t = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
+  let t = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
+  // 先把“跨服费¥xx”从文本里等长挖除：它的 ¥ 不能被当成另一条记录的价格锚点
+  const fees = []; let fm;
+  const feeReG = /跨服[费手续：:\s]*[￥¥]?\s*([\d,]+(?:\.\d+)?)/g;
+  while((fm = feeReG.exec(t))){
+    fees.push({v: parseFloat(fm[1].replace(/,/g, "")), pos: fm.index, end: fm.index + fm[0].length});
+  }
+  if(fees.length){
+    const chars = t.split("");
+    fees.forEach(f => { for(let i = f.pos; i < f.end; i++){ if(chars[i] !== "\n") chars[i] = "　"; } });
+    t = chars.join("");
+  }
   const priceRe = /¥\s*([\d,]+(?:\.\d+)?)/g;
   const anchors = []; let m;
   while((m = priceRe.exec(t))) anchors.push({price: parseFloat(m[1].replace(/,/g, "")), start: m.index, end: m.index + m[0].length});
   if(!anchors.length) return [];
-  const segs = anchors.map((a, i) => ({
-    price: a.price,
-    before: t.slice(i === 0 ? 0 : anchors[i-1].end, a.start),
-    after: t.slice(a.end, i + 1 < anchors.length ? anchors[i+1].start : t.length),
-  }));
+  const segs = anchors.map((a, i) => {
+    const afterEnd = i + 1 < anchors.length ? anchors[i+1].start : t.length;
+    const fee = fees.filter(f => f.pos >= a.end && f.pos < afterEnd).reduce((s, f) => s + f.v, 0);
+    return {
+      price: a.price,
+      fee,
+      before: t.slice(i === 0 ? 0 : anchors[i-1].end, a.start),
+      after: t.slice(a.end, afterEnd),
+    };
+  });
   const attrRe = /([\u4e00-\u9fa5]{2,8})\s*\+?\s*(\d+(?:\.\d+)?)/g;
   const serverRe = /([\u4e00-\u9fa5]{2,12}\d*区[-—–][\u4e00-\u9fa5]{2,12})/;
   const levelRe = /灵尘等级\s*[:：]?\s*(\d{1,2})/;
@@ -903,6 +930,7 @@ function parseCBGText(text){
       attrs,
       level: lm ? (parseInt(lm[1], 10) || "") : "",
       price: s.price,
+      fee: s.fee,
       server: sm ? sm[1] : "",
     });
   }
@@ -917,7 +945,7 @@ function addImportRecord(i, silent){
   if(!(r.price > 0) || !(S > 0)){ if(!silent) alert("该记录评分为 0（属性没识别到或权重为 0），请检查"); return; }
   compare.push({
     t: Date.now() + "" + Math.floor(Math.random() * 1000),
-    name: "", level: r.level, price: r.price, server: r.server,
+    name: "", level: r.level, price: r.price, fee: r.fee || 0, server: r.server,
     dustExtra: false, // 藏宝阁成品玉：总成本 = 标价
     attrs: r.attrs,
   });
@@ -936,7 +964,7 @@ function renderImportPreview(){
     return `<div class="imp-rec">
       <div>
         <div class="attr-line"><span class="cname">${attrTxt}</span></div>
-        <div class="attr-line dim">价格 ${fmt(r.price, 2)} 元${r.level !== "" ? " · 灵尘 " + r.level + " 级" : ""}${r.server ? " · " + r.server : ""}</div>
+        <div class="attr-line dim">价格 ${fmt(r.price, 2)} 元${r.fee > 0 ? " · 跨服费 " + fmt(r.fee, 2) : ""}${r.level !== "" ? " · 灵尘 " + r.level + " 级" : ""}${r.server ? " · " + r.server : ""}</div>
       </div>
       <button class="btn${done ? "" : " primary"}" type="button" data-i="${i}"${done ? " disabled" : ""}>${done ? "已加入 ✓" : "加入对比"}</button>
     </div>`;
@@ -959,7 +987,7 @@ $("parseImport").addEventListener("click", () => {
 function saveForm(){
   saveJSON(LS.f, {
     name:$("jadeName").value, server:$("jadeServer").value, level:$("jadeLevel").value,
-    price:$("jadePrice").value, bench:$("benchPrice").value,
+    price:$("jadePrice").value, fee:$("jadeFee").value, bench:$("benchPrice").value,
     dust5:$("dust5").value, dustAnchor:$("dustAnchor").value, dustExtra:$("dustExtra").checked,
     rows: rowsState.map(r => ({k:r.k, v:r.v})),
   });
@@ -968,7 +996,7 @@ function loadForm(){
   const f = loadJSON(LS.f, null);
   if(f){
     $("jadeName").value = f.name || ""; $("jadeServer").value = f.server || ""; $("jadeLevel").value = f.level || "";
-    $("jadePrice").value = f.price ?? ""; $("benchPrice").value = f.bench ?? "";
+    $("jadePrice").value = f.price ?? ""; $("jadeFee").value = f.fee ?? ""; $("benchPrice").value = f.bench ?? "";
     if(f.dust5 !== undefined && f.dust5 !== "") $("dust5").value = f.dust5;
     if(f.dustAnchor) $("dustAnchor").value = f.dustAnchor;
     $("dustExtra").checked = !!f.dustExtra;
@@ -979,7 +1007,7 @@ function loadForm(){
   }
 }
 
-["jadeName","jadeServer","jadeLevel","jadePrice","benchPrice","dust5","dustAnchor"].forEach(id => {
+["jadeName","jadeServer","jadeLevel","jadePrice","jadeFee","benchPrice","dust5","dustAnchor"].forEach(id => {
   $(id).addEventListener("input", () => { calc(); renderCompare(); saveForm(); });
   $(id).addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
 });
