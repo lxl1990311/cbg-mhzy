@@ -336,7 +336,7 @@
   <div class="overlay" id="importOverlay" hidden>
     <div class="sheet">
       <h3>批量导入 · 藏宝阁</h3>
-      <p class="hint">在藏宝阁列表页选中要导入的行，复制（Ctrl+C）后粘贴到下面——含表头也没关系。每条记录至少要有价格（如 ¥1566.00）和属性（如 速度 +8）；解析后逐条确认再入表。导入的记录按成品玉口径：总成本 = 标价。识别不准的就别加，或者回左侧手动录。</p>
+      <p class="hint">在藏宝阁列表页选中要导入的行，复制（Ctrl+C）后粘贴到下面——含表头也没关系，竖排多行格式也能识别。每条记录至少要有价格（如 ¥1566.00）和属性（如 速度 +8）；解析后逐条确认再入表。导入的记录按成品玉口径：总成本 = 标价。识别不准的就别加，或者回左侧手动录。</p>
       <textarea class="in" id="importText" rows="6" placeholder="粘贴到这里……"></textarea>
       <div class="imp-actions">
         <button class="btn primary" id="parseImport" type="button">解析预览</button>
@@ -346,7 +346,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v11</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v15</footer>
 </div>
 
 <script>
@@ -890,6 +890,79 @@ function mapAttrName(n){
   for(const [t, k] of ATTR_DICT){ if(n.indexOf(t) >= 0) return k; }
   return null;
 }
+// 解析灵尘等级单元格：支持 "0 [+1]" 格式（基础等级+附加等级）
+function parseLevelCell(cell){
+  const m = /^(\d{1,2})(?:\s*\[\+?(\d{1,2})\])?/.exec((cell || "").trim());
+  if(!m) return "";
+  const base = parseInt(m[1], 10);
+  const bonus = m[2] ? parseInt(m[2], 10) : 0;
+  return (base + bonus).toString();
+}
+// 竖排多行格式解析（藏宝阁列表逐行复制：每个单元格一行）
+function parseVerticalText(text){
+  const raw = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
+  const lines = raw.split(/\n+/).map(l => l.replace(/\r/g, "")).filter(l => l.trim());
+  // 找到价格行（含 ¥ 且不是"另需"开头）
+  const priceLines = [];
+  for(let i = 0; i < lines.length; i++){
+    if(/另需/.test(lines[i])) continue;
+    const cells = lines[i].split("\t").map(c => c.trim());
+    const p = cells.findIndex(c => /¥/.test(c));
+    if(p < 0) continue;
+    const pm = /¥\s*([\d,]+(?:\.\d+)?)/.exec(cells[p]);
+    if(!pm) continue;
+    const price = parseFloat(pm[1].replace(/,/g, ""));
+    priceLines.push({lineIdx: i, priceIdx: p, price, cells});
+  }
+  const out = [];
+  for(let j = 0; j < priceLines.length; j++){
+    const {lineIdx, priceIdx, price, cells} = priceLines[j];
+    const startLine = j === 0 ? 0 : priceLines[j-1].lineIdx + 1;
+    // 灵尘等级：价格前第 2 格；若价格行没有灵尘等级格子，从上方行搜索
+    let level = "";
+    if(priceIdx >= 2){
+      level = parseLevelCell(cells[priceIdx - 2]);
+    } else {
+      const lvRe = /^\d{1,2}(?:\s*\[\+?\d{1,2}\])?$/;
+      for(let i = startLine; i < lineIdx; i++){
+        if(lvRe.test(lines[i].trim())){
+          level = parseLevelCell(lines[i]);
+          break;
+        }
+      }
+    }
+    // 属性：价格行上方的行（直到上一个价格行或表头）
+    const attrs = [];
+    const attrRe = /([\u4e00-\u9fa5]{2,8})\s*\+?\s*(\d+(?:\.\d+)?)/g;
+    for(let i = startLine; i < lineIdx; i++){
+      let mm; attrRe.lastIndex = 0;
+      while((mm = attrRe.exec(lines[i]))){
+        if(IMPORT_SKIP.test(mm[1])) continue;
+        const k = mapAttrName(mm[1]);
+        const v = parseFloat(mm[2]);
+        if(k && v) attrs.push({k, v});
+      }
+    }
+    // 服务器：优先价格行同一行右侧的格子，找不到再看价格行下方（直到下一个价格行）
+    // 跨服费/信息费：价格行下方的行
+    let server = "", fee = 0;
+    const serverRe = /([\u4e00-\u9fa5]{2,12}\d*区[-—–][\u4e00-\u9fa5]{2,12})/;
+    const feeRe = /(?:跨服费|信息费|手续费)\s*[￥¥]?\s*([\d,]+(?:\.\d+)?)/;
+    const smSame = serverRe.exec(cells.slice(priceIdx + 1).join("  "));
+    if(smSame) server = smSame[1];
+    const fmSame = feeRe.exec(cells.slice(priceIdx).join("  "));
+    if(fmSame) fee += parseFloat(fmSame[1].replace(/,/g, ""));
+    const endLine = j === priceLines.length - 1 ? lines.length : priceLines[j+1].lineIdx;
+    for(let i = lineIdx + 1; i < endLine; i++){
+      const sm = serverRe.exec(lines[i]);
+      if(sm && !server) server = sm[1];
+      const fm = feeRe.exec(lines[i]);
+      if(fm) fee += parseFloat(fm[1].replace(/,/g, ""));
+    }
+    out.push({attrs, level, price, fee, server});
+  }
+  return out;
+}
 function parseCBGText(text){
   const raw = String(text).replace(/[￥]/g, "¥").replace(/\u00a0/g, " ");
   // 优先：制表符行模式（藏宝阁列表整表复制）——按行内 ¥ 定位价格，相对位置取灵尘等级/属性，避免缩略图列错位
@@ -914,8 +987,7 @@ function parseCBGText(text){
       if(levelCellRe.test(cells[i] || "")){ levelIdx = i; break; }
     }
     if(levelIdx >= 0){
-      const lm = /^(\d{1,2})/.exec(cells[levelIdx]);
-      level = lm ? (parseInt(lm[1], 10) || "") : "";
+      level = parseLevelCell(cells[levelIdx]);
     }
     const attrs = [];
     const attrCells = levelIdx >= 0 ? [cells[levelIdx - 2], cells[levelIdx - 1]] : [];
@@ -931,7 +1003,15 @@ function parseCBGText(text){
     const sm = serverReC.exec(cells.slice(p + 1).join("  "));
     colOut.push({attrs, level, price, fee, server: sm ? sm[1] : ""});
   }
-  if(colOut.length) return colOut;
+  if(colOut.length){
+    // 制表符模式属性全空时，尝试竖排多行格式
+    const hasAttrs = colOut.some(r => r.attrs.length > 0);
+    if(!hasAttrs){
+      const vertical = parseVerticalText(text);
+      if(vertical.length) return vertical;
+    }
+    return colOut;
+  }
   // 回退：自由文本的价格锚点解析
   let t = raw;
   // 先把“跨服费¥xx”从文本里等长挖除：它的 ¥ 不能被当成另一条记录的价格锚点
@@ -961,7 +1041,7 @@ function parseCBGText(text){
   });
   const attrRe = /([\u4e00-\u9fa5]{2,8})\s*\+?\s*(\d+(?:\.\d+)?)/g;
   const serverRe = /([\u4e00-\u9fa5]{2,12}\d*区[-—–][\u4e00-\u9fa5]{2,12})/;
-  const levelRe = /灵尘等级\s*[:：]?\s*(\d{1,2})/;
+  const levelRe = /灵尘等级\s*[:：]?\s*(\d{1,2})(?:\s*\[\+?(\d{1,2})\])?/;
   const out = [];
   for(const s of segs){
     const attrs = []; let mm;
@@ -975,9 +1055,15 @@ function parseCBGText(text){
     if(!attrs.length && !(s.price > 0)) continue;
     const sm = serverRe.exec(s.after);
     const lm = levelRe.exec(s.before);
+    let level = "";
+    if(lm){
+      const base = parseInt(lm[1], 10);
+      const bonus = lm[2] ? parseInt(lm[2], 10) : 0;
+      level = (base + bonus).toString();
+    }
     out.push({
       attrs,
-      level: lm ? (parseInt(lm[1], 10) || "") : "",
+      level,
       price: s.price,
       fee: s.fee,
       server: sm ? sm[1] : "",
