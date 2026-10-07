@@ -323,8 +323,9 @@
         </table>
       </div>
       <div class="empty" id="cmpEmpty">还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。</div>
-      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。</p>
+      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。“跨服费减免（周二）”打开后：折后跨服费 = max(5折, 300元)。</p>
       <div class="cmp-foot">
+        <button class="chip" id="feeSaleToggle" type="button">跨服费减免（周二）</button>
         <button class="btn" id="openImport" type="button">批量导入（藏宝阁）</button>
         <button class="btn" id="clearCompare" type="button" disabled>清空列表</button>
       </div>
@@ -345,7 +346,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v10</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v11</footer>
 </div>
 
 <script>
@@ -390,7 +391,7 @@ const DUST_L1 = [0, 1, 2, 5, 12, 29, 70, 169, 408, 985, 2378, 5741, 13860, 33461
 // 镶嵌规则：只能镶比当前灵尘等级高一级的灵尘（逐级、不能跳级）→ 镶到 N 级 = 1~N 级各一颗
 const DUST_CUM = (() => { const c = [0]; let s = 0; for(let i = 1; i < DUST_L1.length; i++){ s += DUST_L1[i]; c[i] = s; } return c; })();
 
-const LS = {w:"mh.weights", a:"mh.attrs", c:"mh.compare", f:"mh.form", s:"mh.sort"};
+const LS = {w:"mh.weights", a:"mh.attrs", c:"mh.compare", f:"mh.form", s:"mh.sort", feeSale:"mh.feeSale"};
 let attrs = BASE_ATTRS.map(a => ({...a}));   // 含自定义词条
 let weights = {};                            // k -> number
 let presetKey = "balanced";
@@ -713,6 +714,10 @@ function cmpVal(e, k){
   return isNaN(v) ? null : v;
 }
 // 灵尘价格为全局市场参数：改一处，勾了"裸玉另算灵尘"的记录按各自等级实时重算
+// 跨服费减免（周二活动）：打5折后，跨服费最低仍按 300 元收
+const FEE_SALE_RATE = 0.5;
+const FEE_SALE_MIN = 300;
+let feeSaleOn = loadJSON(LS.feeSale, false) === true;
 function dustCostOf(level){
   const lv = (level && +level < DUST_CUM.length) ? +level : 0;
   if(!lv) return 0;
@@ -725,7 +730,9 @@ function enrichEntry(e){
   const worth = dustCostOf(e.level); // 灵尘参考价值（按当前市价）
   const dustYuan = e.dustExtra ? worth : 0; // 成品玉灵尘已含在标价内，不另加
   const price = parseFloat(e.price) > 0 ? parseFloat(e.price) : 0;
-  const fee = parseFloat(e.fee) > 0 ? parseFloat(e.fee) : 0;
+  let fee = parseFloat(e.fee) > 0 ? parseFloat(e.fee) : 0;
+  const feeRaw = fee;
+  if(fee > 0 && feeSaleOn) fee = Math.max(fee * FEE_SALE_RATE, FEE_SALE_MIN);
   const total = price + dustYuan + fee;
   // 评分按当前权重实时重算（权重是全局参数；无属性快照的旧记录退回存档分）
   const S = (e.attrs && e.attrs.length)
@@ -734,7 +741,7 @@ function enrichEntry(e){
   const P = (isFinite(S) && S > 0 && total > 0) ? total / S : null;
   const denomAdj = total - worth; // 剔除灵尘投入后的玉体价格
   const Padj = (isFinite(S) && S > 0 && denomAdj > 0) ? denomAdj / S : null;
-  return {...e, price, dustYuan, total, S: isFinite(S) ? S : null, P, Padj};
+  return {...e, price, fee, feeRaw, dustYuan, total, S: isFinite(S) ? S : null, P, Padj};
 }
 
 function attrSummary(e){
@@ -770,7 +777,7 @@ function renderCompare(){
       <td class="r dim">${i + 1}</td>
       <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}${e.server ? `<span class="dim small"> · ${e.server}</span>` : ""}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
       <td class="r dim">${e.level || "—"}</td>
-      <td class="r">${fmt(e.price, 0)}${e.fee > 0 ? `<span class="attr-line dim">跨服费 ${fmt(e.fee, 0)}</span>` : ""}</td>
+      <td class="r">${fmt(e.price, 0)}${e.fee > 0 ? `<span class="attr-line dim">跨服费 ${fmt(e.fee, 0)}${feeSaleOn ? "（已减免）" : ""}</span>` : ""}</td>
       <td class="r dim">${e.dustYuan ? fmt(e.dustYuan, 0) : "—"}</td>
       <td class="r">${fmt(e.total ?? e.price, 0)}</td>
       <td class="r">${fmt(e.S)}</td>
@@ -981,6 +988,16 @@ function renderImportPreview(){
   if(all) all.addEventListener("click", () => { lastParsed.forEach((r, i) => addImportRecord(i, true)); renderImportPreview(); });
 }
 $("openImport").addEventListener("click", () => { $("importOverlay").hidden = false; $("importText").focus(); });
+function renderFeeSaleChip(){
+  const b = $("feeSaleToggle");
+  b.classList.toggle("on", feeSaleOn);
+  b.textContent = feeSaleOn ? "跨服费减免中 ✓" : "跨服费减免（周二）";
+}
+$("feeSaleToggle").addEventListener("click", () => {
+  feeSaleOn = !feeSaleOn;
+  saveJSON(LS.feeSale, feeSaleOn);
+  renderFeeSaleChip(); renderCompare();
+});
 $("closeImport").addEventListener("click", () => { $("importOverlay").hidden = true; });
 $("parseImport").addEventListener("click", () => {
   lastParsed = parseCBGText($("importText").value);
@@ -1026,6 +1043,7 @@ renderChips();
 renderWeights();
 calc();
 renderCompare();
+renderFeeSaleChip();
 </script>
 </body>
 </html>
