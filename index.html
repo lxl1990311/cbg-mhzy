@@ -345,7 +345,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v9</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v10</footer>
 </div>
 
 <script>
@@ -938,6 +938,7 @@ function parseCBGText(text){
 }
 let lastParsed = [];
 let importedFlags = [];
+let importDone = false;
 function addImportRecord(i, silent){
   if(importedFlags[i]) return;
   const r = lastParsed[i];
@@ -951,11 +952,15 @@ function addImportRecord(i, silent){
   });
   importedFlags[i] = true;
   saveCompare(); renderCompare();
+  // 入表即清空粘贴框，下一批直接粘贴即可
+  $("importText").value = "";
+  if(importedFlags.every(Boolean)){ lastParsed = []; importedFlags = []; importDone = true; }
+  renderImportPreview();
 }
 function renderImportPreview(){
   const box = $("importPreview");
   if(!lastParsed.length){
-    box.innerHTML = `<div class="imp-empty">没解析到记录：确认文本里有价格（如 ¥1566.00）和属性（如 速度 +8）。</div>`;
+    box.innerHTML = `<div class="imp-empty">${importDone ? "本批已全部加入对比。可继续粘贴下一批，或关闭浮层。" : "没解析到记录：确认文本里有价格（如 ¥1566.00）和属性（如 速度 +8）。"}</div>`;
     return;
   }
   const rows = lastParsed.map((r, i) => {
@@ -980,6 +985,7 @@ $("closeImport").addEventListener("click", () => { $("importOverlay").hidden = t
 $("parseImport").addEventListener("click", () => {
   lastParsed = parseCBGText($("importText").value);
   importedFlags = lastParsed.map(() => false);
+  importDone = false;
   renderImportPreview();
 });
 
