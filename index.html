@@ -317,7 +317,7 @@
         </table>
       </div>
       <div class="empty" id="cmpEmpty">还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。</div>
-      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复当时的权重与灵尘参数），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。</p>
+      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。</p>
       <div class="cmp-foot">
         <button class="btn" id="openImport" type="button">批量导入（藏宝阁）</button>
         <button class="btn" id="clearCompare" type="button" disabled>清空列表</button>
@@ -339,7 +339,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v7</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v8</footer>
 </div>
 
 <script>
@@ -417,7 +417,7 @@ function applyPreset(key){
   presetKey = key;
   BASE_ATTRS.forEach(a => { weights[a.k] = PRESETS[key].w[a.k]; });
   persistWeights();
-  renderChips(); renderWeights(); calc(); saveForm();
+  renderChips(); renderWeights(); calc(); renderCompare(); saveForm();
 }
 function persistWeights(){
   const customAttrs = attrs.filter(a => a.custom);
@@ -576,7 +576,7 @@ function renderWeights(){
     row.querySelector(".w").addEventListener("input", e => {
       const v = parseFloat(e.target.value);
       weights[row.dataset.k] = isNaN(v) ? 0 : v;
-      presetKey = "custom"; renderChips(); persistWeights(); calc();
+      presetKey = "custom"; renderChips(); persistWeights(); calc(); renderCompare();
     });
   });
 }
@@ -714,20 +714,23 @@ function dustCostOf(level){
   return DUST_CUM[lv] / DUST_L1[anchorLv] * dustPrice;
 }
 function enrichEntry(e){
-  const worth = dustCostOf(e.level); // 灵尘参考价值（按当前五级价）
+  const worth = dustCostOf(e.level); // 灵尘参考价值（按当前市价）
   const dustYuan = e.dustExtra ? worth : 0; // 成品玉灵尘已含在标价内，不另加
   const price = parseFloat(e.price) > 0 ? parseFloat(e.price) : 0;
   const total = price + dustYuan;
-  const S = parseFloat(e.S);
+  // 评分按当前权重实时重算（权重是全局参数；无属性快照的旧记录退回存档分）
+  const S = (e.attrs && e.attrs.length)
+    ? e.attrs.reduce((s, a) => s + a.v * (weights[a.k] ?? 0), 0)
+    : parseFloat(e.S);
   const P = (isFinite(S) && S > 0 && total > 0) ? total / S : null;
   const denomAdj = total - worth; // 剔除灵尘投入后的玉体价格
   const Padj = (isFinite(S) && S > 0 && denomAdj > 0) ? denomAdj / S : null;
-  return {...e, price, dustYuan, total, P, Padj};
+  return {...e, price, dustYuan, total, S: isFinite(S) ? S : null, P, Padj};
 }
 
 function attrSummary(e){
   if(!e.attrs || !e.attrs.length) return "未命名记录";
-  const parts = e.attrs.map(a => ({n:attrLabel(a.k), v:a.v, c:a.v * ((e.w && e.w[a.k]) ?? weights[a.k] ?? 0)}))
+  const parts = e.attrs.map(a => ({n:attrLabel(a.k), v:a.v, c:a.v * (weights[a.k] ?? 0)}))
     .filter(p => p.c !== 0).sort((a, b) => b.c - a.c).slice(0, 3);
   if(!parts.length) return "未命名记录";
   return parts.map(p => `${p.n}${fmt(p.v)}`).join("·");
@@ -795,8 +798,6 @@ $("addCompare").addEventListener("click", () => {
     price: st.price,
     dustExtra: st.dustExtra,
     attrs: st.rows.map(r => ({k:r.k, v:r.v})),
-    w: {...weights},
-    S: st.S,
   };
   if(editingId){
     const i = compare.findIndex(x => x.t === editingId);
@@ -836,13 +837,6 @@ function loadRecord(e){
   $("jadeLevel").value = e.level || "";
   $("jadePrice").value = e.price ?? "";
   $("dustExtra").checked = !!e.dustExtra;
-  if(e.w){
-    weights = {...e.w};
-    BASE_ATTRS.forEach(a => { if(typeof weights[a.k] !== "number") weights[a.k] = PRESETS.balanced.w[a.k]; });
-    attrs.forEach(a => { if(typeof weights[a.k] !== "number") weights[a.k] = 1; });
-    presetKey = "custom";
-    renderChips(); renderWeights(); persistWeights();
-  }
   rowsState.length = 0;
   (e.attrs && e.attrs.length ? e.attrs : [{k:"dmg", v:""}, {k:"spd", v:""}, {k:"hp", v:""}])
     .forEach(r => rowsState.push({k:r.k || "dmg", v:r.v ?? "", pending:false}));
@@ -925,7 +919,7 @@ function addImportRecord(i, silent){
     t: Date.now() + "" + Math.floor(Math.random() * 1000),
     name: "", level: r.level, price: r.price, server: r.server,
     dustExtra: false, // 藏宝阁成品玉：总成本 = 标价
-    attrs: r.attrs, w: {...weights}, S,
+    attrs: r.attrs,
   });
   importedFlags[i] = true;
   saveCompare(); renderCompare();
