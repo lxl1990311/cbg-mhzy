@@ -232,7 +232,7 @@
       </div>
       <p class="hint" id="dustHint">选择灵尘等级并填入五级灵尘市价后，自动按官方合成规则折算灵尘价值。</p>
       <p class="hint">价格建议填藏宝阁人民币成交价。灵尘逐级镶嵌：镶到 N 级要依次镶 1~N 级灵尘各一颗（不能跳级），累计投入按官方合成规则（单颗 N 级 = 2×(N-1)级 + 1×(N-2)级）折算。灵尘市价填你查到的某级单价并在「对应等级」选它的等级——市价含手续费与溢价，等级越高溢价越多，选你最有把握的一档做锚最准。成品玉：等级填已镶到的级数，总成本就是标价；裸玉：填打算镶到的级数并勾选「裸玉另算灵尘」。藏宝阁标注的「N [+1]」表示属性与附加属性重复而白送 1 级——等级仍填 N（含赠送），同时勾上「含 +1 赠送级」，工具会把赠送那一级从成本里扣掉，避免高等级玉被虚高估。主属性（抗物爆/抗法爆/抵抗封印/气血回复）按百分比填。</p>
-      <div class="frow1">
+      <div class="frow1" hidden>
         <label class="lab" for="benchPrice">参考市场单价（元/分，选填）</label>
         <input class="in" id="benchPrice" type="number" min="0" step="any" placeholder="如 40：低于它算划算">
         <p class="hint">填一个心理价位（每 1 分综合属性值多少钱），结果区会提示这件玉比参考贵/便宜多少。</p>
@@ -268,7 +268,7 @@
           <div class="meter-row" id="meterRow" hidden>
             <div class="meter"><i class="fill" id="meterFill"></i></div>
           </div>
-          <span class="small dim" id="rDelta">未设参考单价</span>
+          <span class="small dim" id="rDelta" hidden>未设参考单价</span>
         </div>
         <div class="res-cell">
           <span class="lab">扣灵尘性价比</span>
@@ -316,7 +316,7 @@
               <th class="r sortable" data-k="S" aria-sort="none">评分<span class="arr"></span></th>
               <th class="r sortable" data-k="P" aria-sort="none">元/分<span class="arr"></span></th>
               <th class="r sortable" data-k="Padj" aria-sort="none">扣灵元/分<span class="arr"></span></th>
-              <th class="r">vs 参考</th>
+              <th class="r" hidden>vs 参考</th>
               <th></th>
             </tr>
           </thead>
@@ -348,7 +348,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v16</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v17</footer>
 </div>
 
 <script>
@@ -797,7 +797,7 @@ function renderCompare(){
       <td class="r">${fmt(e.S)}</td>
       <td class="r">${fmt(e.P)}</td>
       <td class="r">${fmt(e.Padj)}</td>
-      <td class="r">${dTxt}</td>
+      <td class="r" hidden>${dTxt}</td>
       <td class="r"><button class="icon-btn del" type="button" data-t="${e.t}" aria-label="删除该记录">×</button></td>
     </tr>`;
   }).join("");
