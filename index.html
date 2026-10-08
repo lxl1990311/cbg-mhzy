@@ -328,6 +328,7 @@
       <div class="cmp-foot">
         <button class="chip" id="feeSaleToggle" type="button">跨服费减免（周二）</button>
         <button class="btn" id="openImport" type="button">批量导入（藏宝阁）</button>
+        <button class="btn" id="fixBonus" type="button" hidden>修正旧记录 +1</button>
         <button class="btn" id="clearCompare" type="button" disabled>清空列表</button>
       </div>
     </section>
@@ -778,6 +779,8 @@ function renderCompare(){
   $("cmpEmpty").hidden = list.length !== 0;
   $("cmpHint").hidden = list.length === 0;
   $("clearCompare").disabled = list.length === 0;
+  // 存在 v16 之前导入的记录（无 bonus 字段）时，显示修正入口
+  $("fixBonus").hidden = !compare.some(e => e.bonus === undefined && e.level !== undefined && e.level !== "");
   $("cmpBody").innerHTML = list.map((e, i) => {
     const d = bench > 0 && isFinite(e.P) ? (e.P - bench) / bench * 100 : null;
     const dTxt = d === null ? "—" : (d <= 0 ? `<span class="good">低 ${fmt(-d, 1)}%</span>` : `<span class="bad">高 ${fmt(d, 1)}%</span>`);
@@ -885,6 +888,21 @@ function exitEdit(){
 }
 $("exitEdit").addEventListener("click", exitEdit);
 
+// 迁移：v16 之前的导入记录没有 bonus 字段（+1 被并入 level），标记为赠送级
+// 只处理 bonus 为 undefined 的旧记录，不动已有 bonus 的记录
+function fixOldBonus(){
+  const targets = compare.filter(e => e.bonus === undefined && e.level !== undefined && e.level !== "");
+  if(!targets.length) return;
+  const msg = "将把 " + targets.length + " 条旧记录标记为「含 +1 赠送级」：\n\n" +
+    targets.slice(0, 12).map(e => "  " + (e.level || "?") + " 级 → 实际 " + (+e.level - 1) + " 级").join("\n") +
+    (targets.length > 12 ? "\n  …共 " + targets.length + " 条" : "") +
+    "\n\n前提：这些记录的藏宝阁标注都是「N [+1]」。若混有无 +1 的，请点「取消」并逐条修正。确定继续？";
+  if(!confirm(msg)) return;
+  compare.forEach(e => { if(e.bonus === undefined && e.level !== undefined && e.level !== "") e.bonus = 1; });
+  saveCompare(); renderCompare();
+}
+
+$("fixBonus").addEventListener("click", fixOldBonus);
 $("clearCompare").addEventListener("click", () => {
   if(!compare.length) return;
   if(confirm("确定清空对比列表？")){ compare = []; editingId = null; $("exitEdit").hidden = true; $("addCompare").textContent = "加入对比列表"; saveCompare(); renderCompare(); calc(); }
