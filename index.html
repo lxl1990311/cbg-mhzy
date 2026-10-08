@@ -195,7 +195,7 @@
       </div>
       <div class="frow3">
         <div>
-          <label class="lab" for="jadeLevel">灵尘等级</label>
+          <label class="lab" for="jadeLevel">灵尘等级（含赠送）</label>
           <select class="in" id="jadeLevel">
             <option value="">—</option>
             <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
@@ -227,10 +227,11 @@
         </div>
         <div>
           <label class="chk" for="dustExtra"><input type="checkbox" id="dustExtra">裸玉另算灵尘</label>
+          <label class="chk" for="dustBonus" style="margin-top:8px"><input type="checkbox" id="dustBonus">含 +1 赠送级</label>
         </div>
       </div>
       <p class="hint" id="dustHint">选择灵尘等级并填入五级灵尘市价后，自动按官方合成规则折算灵尘价值。</p>
-      <p class="hint">价格建议填藏宝阁人民币成交价。灵尘逐级镶嵌：镶到 N 级要依次镶 1~N 级灵尘各一颗（不能跳级），累计投入按官方合成规则（单颗 N 级 = 2×(N-1)级 + 1×(N-2)级）折算。灵尘市价填你查到的某级单价并在「对应等级」选它的等级——市价含手续费与溢价，等级越高溢价越多，选你最有把握的一档做锚最准。成品玉：等级填已镶到的级数，总成本就是标价；裸玉：填打算镶到的级数并勾选「裸玉另算灵尘」。主属性（抗物爆/抗法爆/抵抗封印/气血回复）按百分比填。</p>
+      <p class="hint">价格建议填藏宝阁人民币成交价。灵尘逐级镶嵌：镶到 N 级要依次镶 1~N 级灵尘各一颗（不能跳级），累计投入按官方合成规则（单颗 N 级 = 2×(N-1)级 + 1×(N-2)级）折算。灵尘市价填你查到的某级单价并在「对应等级」选它的等级——市价含手续费与溢价，等级越高溢价越多，选你最有把握的一档做锚最准。成品玉：等级填已镶到的级数，总成本就是标价；裸玉：填打算镶到的级数并勾选「裸玉另算灵尘」。藏宝阁标注的「N [+1]」表示属性与附加属性重复而白送 1 级——等级仍填 N（含赠送），同时勾上「含 +1 赠送级」，工具会把赠送那一级从成本里扣掉，避免高等级玉被虚高估。主属性（抗物爆/抗法爆/抵抗封印/气血回复）按百分比填。</p>
       <div class="frow1">
         <label class="lab" for="benchPrice">参考市场单价（元/分，选填）</label>
         <input class="in" id="benchPrice" type="number" min="0" step="any" placeholder="如 40：低于它算划算">
@@ -323,7 +324,7 @@
         </table>
       </div>
       <div class="empty" id="cmpEmpty">还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。</div>
-      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。“跨服费减免（周二）”打开后：折后跨服费 = max(5折, 300元)。</p>
+      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。等级带“赠”标记的记录已扣除属性重复赠送的那一级成本（藏宝阁「N [+1]」的白送级，商家未花成本）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。“跨服费减免（周二）”打开后：折后跨服费 = max(5折, 300元)。</p>
       <div class="cmp-foot">
         <button class="chip" id="feeSaleToggle" type="button">跨服费减免（周二）</button>
         <button class="btn" id="openImport" type="button">批量导入（藏宝阁）</button>
@@ -346,7 +347,7 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v15</footer>
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v16</footer>
 </div>
 
 <script>
@@ -596,10 +597,12 @@ function computeStats(){
   const parts = rows.map(r => ({label:attrLabel(r.k), v:r.v, w:weights[r.k] ?? 0, c:r.v * (weights[r.k] ?? 0)}));
   const S = parts.reduce((s, p) => s + p.c, 0);
   const lv = $("jadeLevel").value;
+  const bonus = $("dustBonus").checked ? 1 : 0; // +1 赠送级：属性重复白送，商家没花钱
   const dustPrice = parseFloat($("dust5").value);
   const anchorLv = parseInt($("dustAnchor").value, 10);
   const dustExtra = $("dustExtra").checked;
-  const q = (lv && +lv < DUST_CUM.length) ? DUST_CUM[+lv] : 0; // 镶到该级累计的一级当量
+  // 实际投入当量：赠送级无需镶嵌 → DUST_CUM[lv − bonus]
+  const q = (lv && +lv < DUST_CUM.length) ? DUST_CUM[+lv - (bonus ? Math.min(bonus, +lv) : 0)] : 0;
   const unit1 = (anchorLv >= 1 && anchorLv < DUST_L1.length && dustPrice > 0) ? dustPrice / DUST_L1[anchorLv] : 0; // 一级当量单价（元）
   const dustWorth = (lv && unit1 > 0) ? q * unit1 : 0;
   const dustYuan = dustExtra ? dustWorth : 0;
@@ -608,7 +611,7 @@ function computeStats(){
   const valid = price > 0 && parts.length > 0;
   const hasScore = S > 0;
   const P = (valid && hasScore && total > 0) ? total / S : null;
-  return {price, bench, rows, parts, S, lv, dustPrice, anchorLv, dustExtra, q, dustWorth, dustYuan, fee, total, valid, hasScore, P};
+  return {price, bench, rows, parts, S, lv, bonus, dustPrice, anchorLv, dustExtra, q, dustWorth, dustYuan, fee, total, valid, hasScore, P};
 }
 
 function calc(){
@@ -625,10 +628,11 @@ function calc(){
 
   // 灵尘提示
   const dustWorthTxt = st.dustWorth > 0 ? fmt(st.dustWorth) : null;
+  const bonusTxt = st.bonus ? `，其中 1 级由属性重复赠送（商家未花成本），实际投入按 ${+st.lv - st.bonus} 级计` : "";
   if(st.lv && st.dustExtra){
-    $("dustHint").textContent = `裸玉另算：镶到 ${st.lv} 级需依次镶嵌 1~${st.lv} 级灵尘各一颗（累计 ≈${fmt(st.q, 0)} 个一级当量）` + (dustWorthTxt ? `，另加约 ${dustWorthTxt} 元进总成本` : "；填入灵尘市价后折算金额");
+    $("dustHint").textContent = `裸玉另算：镶到 ${st.lv} 级需依次镶嵌 1~${st.lv} 级灵尘各一颗（累计 ≈${fmt(st.q, 0)} 个一级当量）${bonusTxt}` + (dustWorthTxt ? `，另加约 ${dustWorthTxt} 元进总成本` : "；填入灵尘市价后折算金额");
   }else if(st.lv){
-    $("dustHint").textContent = `已镶 ${st.lv} 级灵尘（逐级镶嵌，累计 ≈${fmt(st.q, 0)} 个一级当量）` + (dustWorthTxt ? `，投入约 ${dustWorthTxt} 元已含在标价内，总成本即标价` : "；填入灵尘市价后显示参考价值");
+    $("dustHint").textContent = `已镶 ${st.lv} 级灵尘（逐级镶嵌，累计 ≈${fmt(st.q, 0)} 个一级当量）${bonusTxt}` + (dustWorthTxt ? `，投入约 ${dustWorthTxt} 元已含在标价内，总成本即标价` : "；填入灵尘市价后显示参考价值");
   }else if(st.dustPrice > 0){
     $("dustHint").textContent = "已填灵尘市价 " + fmt(st.dustPrice) + " 元/颗（" + st.anchorLv + " 级）——还需选择「灵尘等级」：成品玉填已镶到的等级，裸玉填打算镶到的等级并勾选「裸玉另算灵尘」。";
   }else{
@@ -718,16 +722,23 @@ function cmpVal(e, k){
 const FEE_SALE_RATE = 0.5;
 const FEE_SALE_MIN = 300;
 let feeSaleOn = loadJSON(LS.feeSale, false) === true;
-function dustCostOf(level){
+// 灵尘实际投入的参考价值（元）
+// bonus = 属性重复白送的级数（如 "6 [+1]" 的 +1）——白送那一级商家没花钱，
+// 折算时要从 DUST_CUM[level] 里扣掉一颗 L 级灵尘的当量 DUST_L1[level]。
+function dustCostOf(level, bonus){
   const lv = (level && +level < DUST_CUM.length) ? +level : 0;
   if(!lv) return 0;
+  // 赠送级不需镶嵌：实际投入 = DUST_CUM[lv − bonus]（0 [+1] 即 0 当量）
+  const b = (bonus && +bonus > 0) ? Math.min(+bonus, lv) : 0;
+  const invested = DUST_CUM[lv - b];
   const anchorLv = parseInt($("dustAnchor").value, 10);
   const dustPrice = parseFloat($("dust5").value);
   if(!(dustPrice > 0) || !(anchorLv >= 1 && anchorLv < DUST_L1.length)) return 0;
-  return DUST_CUM[lv] / DUST_L1[anchorLv] * dustPrice;
+  return invested / DUST_L1[anchorLv] * dustPrice;
 }
 function enrichEntry(e){
-  const worth = dustCostOf(e.level); // 灵尘参考价值（按当前市价）
+  const bonus = +e.bonus > 0 ? +e.bonus : 0;
+  const worth = dustCostOf(e.level, bonus); // 灵尘实际投入参考价值（按当前市价，扣除赠送级）
   const dustYuan = e.dustExtra ? worth : 0; // 成品玉灵尘已含在标价内，不另加
   const price = parseFloat(e.price) > 0 ? parseFloat(e.price) : 0;
   let fee = parseFloat(e.fee) > 0 ? parseFloat(e.fee) : 0;
@@ -776,7 +787,7 @@ function renderCompare(){
     return `<tr class="${cls}" data-t="${e.t}" tabindex="0" aria-label="${(e.name || attrSummary(e)).replace(/"/g, "")}，元每分${fmt(e.P)}">
       <td class="r dim">${i + 1}</td>
       <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}${e.server ? `<span class="dim small"> · ${e.server}</span>` : ""}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
-      <td class="r dim">${e.level || "—"}</td>
+      <td class="r dim">${e.level || "—"}${+e.bonus > 0 ? `<span class="attr-line" title="属性重复赠送 ${e.bonus} 级，商家实际只镶到 ${+e.level - e.bonus} 级">赠${e.bonus}</span>` : ""}</td>
       <td class="r">${fmt(e.price, 0)}${e.fee > 0 ? `<span class="attr-line dim">跨服费 ${fmt(e.fee, 0)}${feeSaleOn ? "（已减免）" : ""}</span>` : ""}</td>
       <td class="r dim">${e.dustYuan ? fmt(e.dustYuan, 0) : "—"}</td>
       <td class="r">${fmt(e.total ?? e.price, 0)}</td>
@@ -811,6 +822,7 @@ $("addCompare").addEventListener("click", () => {
     name: $("jadeName").value.trim(),
     server: $("jadeServer").value.trim(),
     level: st.lv,
+    bonus: st.bonus,
     price: st.price,
     fee: st.fee,
     dustExtra: st.dustExtra,
@@ -852,6 +864,7 @@ function loadRecord(e){
   $("jadeName").value = e.name || "";
   $("jadeServer").value = e.server || "";
   $("jadeLevel").value = e.level || "";
+  $("dustBonus").checked = +e.bonus > 0;
   $("jadePrice").value = e.price ?? "";
   $("jadeFee").value = e.fee > 0 ? e.fee : "";
   $("dustExtra").checked = !!e.dustExtra;
@@ -890,13 +903,14 @@ function mapAttrName(n){
   for(const [t, k] of ATTR_DICT){ if(n.indexOf(t) >= 0) return k; }
   return null;
 }
-// 解析灵尘等级单元格：支持 "0 [+1]" 格式（基础等级+附加等级）
+// 解析灵尘等级单元格：返回 {level 显示等级(含赠送), bonus 赠送级数}
+// "0 [+1]" -> {level:"1", bonus:1}；商家实际只镶到 0 级，+1 由属性重复白送
 function parseLevelCell(cell){
   const m = /^(\d{1,2})(?:\s*\[\+?(\d{1,2})\])?/.exec((cell || "").trim());
-  if(!m) return "";
+  if(!m) return {level:"", bonus:0};
   const base = parseInt(m[1], 10);
   const bonus = m[2] ? parseInt(m[2], 10) : 0;
-  return (base + bonus).toString();
+  return {level:(base + bonus).toString(), bonus};
 }
 // 竖排多行格式解析（藏宝阁列表逐行复制：每个单元格一行）
 function parseVerticalText(text){
@@ -919,14 +933,16 @@ function parseVerticalText(text){
     const {lineIdx, priceIdx, price, cells} = priceLines[j];
     const startLine = j === 0 ? 0 : priceLines[j-1].lineIdx + 1;
     // 灵尘等级：价格前第 2 格；若价格行没有灵尘等级格子，从上方行搜索
-    let level = "";
+    let level = "", bonus = 0;
     if(priceIdx >= 2){
-      level = parseLevelCell(cells[priceIdx - 2]);
+      const lv = parseLevelCell(cells[priceIdx - 2]);
+      level = lv.level; bonus = lv.bonus;
     } else {
       const lvRe = /^\d{1,2}(?:\s*\[\+?\d{1,2}\])?$/;
       for(let i = startLine; i < lineIdx; i++){
         if(lvRe.test(lines[i].trim())){
-          level = parseLevelCell(lines[i]);
+          const lv = parseLevelCell(lines[i]);
+          level = lv.level; bonus = lv.bonus;
           break;
         }
       }
@@ -959,7 +975,7 @@ function parseVerticalText(text){
       const fm = feeRe.exec(lines[i]);
       if(fm) fee += parseFloat(fm[1].replace(/,/g, ""));
     }
-    out.push({attrs, level, price, fee, server});
+    out.push({attrs, level, bonus, price, fee, server});
   }
   return out;
 }
@@ -981,13 +997,14 @@ function parseCBGText(text){
     const fmC = /跨服[费手续：:\s]*[￥¥]?\s*([\d,]+(?:\.\d+)?)/.exec(cells[p] + "  " + cells.slice(p + 1).join("  "));
     if(fmC) fee = parseFloat(fmC[1].replace(/,/g, ""));
     // 布局（综合排序/基础属性/附加属性/灵尘等级/特效/价格）：灵尘等级在价格前第 2 格
-    let level = "";
+    let level = "", bonus = 0;
     let levelIdx = -1;
     for(let i = p - 2; i >= Math.max(0, p - 6); i--){
       if(levelCellRe.test(cells[i] || "")){ levelIdx = i; break; }
     }
     if(levelIdx >= 0){
-      level = parseLevelCell(cells[levelIdx]);
+      const lv = parseLevelCell(cells[levelIdx]);
+      level = lv.level; bonus = lv.bonus;
     }
     const attrs = [];
     const attrCells = levelIdx >= 0 ? [cells[levelIdx - 2], cells[levelIdx - 1]] : [];
@@ -1001,7 +1018,7 @@ function parseCBGText(text){
       }
     }
     const sm = serverReC.exec(cells.slice(p + 1).join("  "));
-    colOut.push({attrs, level, price, fee, server: sm ? sm[1] : ""});
+    colOut.push({attrs, level, bonus, price, fee, server: sm ? sm[1] : ""});
   }
   if(colOut.length){
     // 制表符模式属性全空时，尝试竖排多行格式
@@ -1055,15 +1072,16 @@ function parseCBGText(text){
     if(!attrs.length && !(s.price > 0)) continue;
     const sm = serverRe.exec(s.after);
     const lm = levelRe.exec(s.before);
-    let level = "";
+    let level = "", bonus = 0;
     if(lm){
       const base = parseInt(lm[1], 10);
-      const bonus = lm[2] ? parseInt(lm[2], 10) : 0;
+      bonus = lm[2] ? parseInt(lm[2], 10) : 0;
       level = (base + bonus).toString();
     }
     out.push({
       attrs,
       level,
+      bonus,
       price: s.price,
       fee: s.fee,
       server: sm ? sm[1] : "",
@@ -1081,7 +1099,7 @@ function addImportRecord(i, silent){
   if(!(r.price > 0) || !(S > 0)){ if(!silent) alert("该记录评分为 0（属性没识别到或权重为 0），请检查"); return; }
   compare.push({
     t: Date.now() + "" + Math.floor(Math.random() * 1000),
-    name: "", level: r.level, price: r.price, fee: r.fee || 0, server: r.server,
+    name: "", level: r.level, bonus: r.bonus || 0, price: r.price, fee: r.fee || 0, server: r.server,
     dustExtra: false, // 藏宝阁成品玉：总成本 = 标价
     attrs: r.attrs,
   });
@@ -1104,7 +1122,7 @@ function renderImportPreview(){
     return `<div class="imp-rec">
       <div>
         <div class="attr-line"><span class="cname">${attrTxt}</span></div>
-        <div class="attr-line dim">价格 ${fmt(r.price, 2)} 元${r.fee > 0 ? " · 跨服费 " + fmt(r.fee, 2) : ""}${r.level !== "" ? " · 灵尘 " + r.level + " 级" : ""}${r.server ? " · " + r.server : ""}</div>
+        <div class="attr-line dim">价格 ${fmt(r.price, 2)} 元${r.fee > 0 ? " · 跨服费 " + fmt(r.fee, 2) : ""}${r.level !== "" ? " · 灵尘 " + r.level + " 级" + (r.bonus > 0 ? `（含赠送 ${r.bonus} 级，实投 ${+r.level - r.bonus} 级）` : "") : ""}${r.server ? " · " + r.server : ""}</div>
       </div>
       <button class="btn${done ? "" : " primary"}" type="button" data-i="${i}"${done ? " disabled" : ""}>${done ? "已加入 ✓" : "加入对比"}</button>
     </div>`;
@@ -1140,6 +1158,7 @@ function saveForm(){
     name:$("jadeName").value, server:$("jadeServer").value, level:$("jadeLevel").value,
     price:$("jadePrice").value, fee:$("jadeFee").value, bench:$("benchPrice").value,
     dust5:$("dust5").value, dustAnchor:$("dustAnchor").value, dustExtra:$("dustExtra").checked,
+    dustBonus:$("dustBonus").checked,
     rows: rowsState.map(r => ({k:r.k, v:r.v})),
   });
 }
@@ -1151,6 +1170,7 @@ function loadForm(){
     if(f.dust5 !== undefined && f.dust5 !== "") $("dust5").value = f.dust5;
     if(f.dustAnchor) $("dustAnchor").value = f.dustAnchor;
     $("dustExtra").checked = !!f.dustExtra;
+    $("dustBonus").checked = !!f.dustBonus;
     (f.rows && f.rows.length ? f.rows : [{k:"dmg", v:""}, {k:"spd", v:""}, {k:"hp", v:""}])
       .forEach(r => rowsState.push({k: r.k || "dmg", v: r.v ?? "", pending: false}));
   }else{
@@ -1162,7 +1182,9 @@ function loadForm(){
   $(id).addEventListener("input", () => { calc(); renderCompare(); saveForm(); });
   $(id).addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
 });
-$("dustExtra").addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
+["dustExtra","dustBonus"].forEach(id => {
+  $(id).addEventListener("change", () => { calc(); renderCompare(); saveForm(); });
+});
 
 /* ---------- 启动 ---------- */
 loadForm();
