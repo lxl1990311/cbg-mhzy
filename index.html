@@ -17,6 +17,7 @@
     --amber:#e8b34c;
     --green:#4ecf7a;
     --coral:#ff6b5e;
+    --sold:#6cb2ee;
     --mono:"Cascadia Code",Consolas,"Microsoft YaHei",monospace;
   }
   *{box-sizing:border-box}
@@ -155,6 +156,22 @@
   .cname.unnamed{color:var(--dim)}
   .attr-line{display:block;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
   tr.best .cname{color:var(--green)}
+  /* 已成交：市场认可此价 → 正向参考锚点（蓝色，区别于绿色"最划算"与黄色"编辑中"） */
+  tr.sold td{background:rgba(108,178,238,.06)}
+  tr.sold td:first-child{box-shadow:inset 2px 0 0 var(--sold)}
+  tr.sold .attr-line.dim{color:#8ba3c4}
+  tr.sold .sold-mark{color:var(--sold)}
+  .sold-mark{color:var(--sold);font-weight:600}
+  .row-acts{display:flex;gap:2px;justify-content:flex-end}
+  .icon-btn.on-sold{color:var(--sold);border-color:rgba(108,178,238,.5)}
+  .icon-btn.on-drop{color:var(--coral);border-color:#6b332c}
+  .tagline{display:inline-block;padding:0 5px;border:1px solid var(--border-strong);border-radius:2px;font-size:11px;line-height:1.6;color:var(--muted);white-space:nowrap}
+  .tag-sold{border-color:rgba(108,178,238,.5);color:var(--sold);background:rgba(108,178,238,.10)}
+  .tag-drop{border-color:#6b332c;color:var(--coral)}
+  .price-old{display:block;font-size:11px;line-height:1.4;color:var(--dim);text-decoration:line-through}
+  .chk.flat{margin-top:0}
+  .drop-grid{display:grid;grid-template-columns:auto 120px;gap:10px;align-items:center;margin-top:14px}
+  .drop-preview{margin-top:10px}
   .cmp-foot{display:flex;justify-content:flex-end;margin-top:10px;gap:8px}
 
   /* 批量导入浮层 */
@@ -296,6 +313,7 @@
       <div class="res-foot">
         <button class="btn primary" id="addCompare" type="button" disabled>加入对比列表</button>
         <button class="btn" id="exitEdit" type="button" hidden>退出编辑</button>
+        <label class="chk flat" for="recSold" hidden><input type="checkbox" id="recSold">已成交</label>
         <span class="dim small" id="addHint">填好价格和属性后可加入下方列表横向比较</span>
       </div>
     </section>
@@ -309,6 +327,7 @@
             <tr>
               <th class="r">#</th>
               <th>名称</th>
+              <th class="r">状态</th>
               <th class="r sortable" data-k="level" aria-sort="none">等级<span class="arr"></span></th>
               <th class="r sortable" data-k="price" aria-sort="none">标价(元)<span class="arr"></span></th>
               <th class="r sortable" data-k="dustYuan" aria-sort="none">另加灵尘(元)<span class="arr"></span></th>
@@ -324,9 +343,10 @@
         </table>
       </div>
       <div class="empty" id="cmpEmpty">还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。</div>
-      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。等级带“赠”标记的记录已扣除属性重复赠送的那一级成本（藏宝阁「N [+1]」的白送级，商家未花成本）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。“跨服费减免（周二）”打开后：折后跨服费 = max(5折, 300元)。</p>
+      <p class="hint" id="cmpHint" hidden>名称下方显示该记录的属性摘要；点击任意一行可载回表单查看/修改（恢复该记录的属性与灵尘等级，权重用当前方案），改完点“更新该记录”保存。旧版记录未存属性数值，点开后重新填写属性再“更新该记录”即可补全。点击表头可按该列排序（再点一次反向）。“另加灵尘”只对勾了“裸玉另算灵尘”的记录计钱，成品玉的总成本就是标价；<b>成品玉的标价下方会标出“含灵尘约 X 元”</b>——这颗玉已镶的灵尘按当前市价折算的参考价值（已含在标价里、没另加钱），改「灵尘市价」整表会实时重算，不用逐条点开看。“扣灵元/分”剔除了灵尘投入：同一价格与属性下，灵尘等级越高数值越低（越划算）。等级带“赠”标记的记录已扣除属性重复赠送的那一级成本（藏宝阁「N [+1]」的白送级，商家未花成本）。评分和元/分按当前权重方案实时重算：切换方案或改权重，整张表立刻变。“跨服费减免（周二）”打开后：折后跨服费 = max(5折, 300元)。<b>已成交 / 降价</b>：每行末尾的<b>「售」</b>按钮把这条标成<b>已成交</b>（整行变蓝、状态列显示「已成交 ✓」）——<b>成交价＝市场认可这个价</b>，是很好的比价锚点：拿它的「元/分」（该列会标出「成交」字样）去和在售的比，就能看出哪件开价偏贵、哪件真便宜。绿色高亮只给<b>在售</b>里最划算的那件。<b>「降」</b>按钮打开降价面板，填现价（可顺便核对原价）——「状态」列显示降了多少（元与百分比），「标价」列用删除线显示原价、下面标出现价与降幅。编辑记录时把价格改低再“更新该记录”，也会自动按原价算出降幅；正在编辑时表单下方可勾选“已成交”。已成交的记录可用下方「隐藏已成交」暂时收起。</p>
       <div class="cmp-foot">
         <button class="chip" id="feeSaleToggle" type="button">跨服费减免（周二）</button>
+        <button class="chip" id="hideSoldToggle" type="button">隐藏已成交</button>
         <button class="btn" id="openImport" type="button">批量导入（藏宝阁）</button>
         <button class="btn" id="fixBonus" type="button" hidden>修正旧记录 +1</button>
         <button class="btn" id="clearCompare" type="button" disabled>清空列表</button>
@@ -348,7 +368,26 @@
     </div>
   </div>
 
-  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v17</footer>
+  <div class="overlay" id="dropOverlay" hidden>
+    <div class="sheet" style="width:min(430px,94vw)">
+      <h3>标记降价</h3>
+      <p class="hint" id="dropName">—</p>
+      <div class="drop-grid">
+        <label class="lab" for="dropOrig">原价（元）</label>
+        <input class="in" id="dropOrig" type="number" min="0" step="any" inputmode="decimal">
+        <label class="lab" for="dropNow">现价（元）</label>
+        <input class="in" id="dropNow" type="number" min="0" step="any" inputmode="decimal">
+      </div>
+      <p class="hint drop-preview" id="dropPreview">—</p>
+      <div class="imp-actions">
+        <button class="btn primary" id="dropOk" type="button">确认</button>
+        <button class="btn" id="dropClear" type="button">取消降价标记</button>
+        <button class="btn" id="dropCancel" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>数据仅保存在本机浏览器（localStorage）· 权重为经验参考值，请按自己区服的行情校准 · 仅供参考，非官方工具 · v18</footer>
 </div>
 
 <script>
@@ -393,7 +432,7 @@ const DUST_L1 = [0, 1, 2, 5, 12, 29, 70, 169, 408, 985, 2378, 5741, 13860, 33461
 // 镶嵌规则：只能镶比当前灵尘等级高一级的灵尘（逐级、不能跳级）→ 镶到 N 级 = 1~N 级各一颗
 const DUST_CUM = (() => { const c = [0]; let s = 0; for(let i = 1; i < DUST_L1.length; i++){ s += DUST_L1[i]; c[i] = s; } return c; })();
 
-const LS = {w:"mh.weights", a:"mh.attrs", c:"mh.compare", f:"mh.form", s:"mh.sort", feeSale:"mh.feeSale"};
+const LS = {w:"mh.weights", a:"mh.attrs", c:"mh.compare", f:"mh.form", s:"mh.sort", feeSale:"mh.feeSale", hideSold:"mh.hideSold"};
 let attrs = BASE_ATTRS.map(a => ({...a}));   // 含自定义词条
 let weights = {};                            // k -> number
 let presetKey = "balanced";
@@ -746,6 +785,12 @@ function enrichEntry(e){
   const feeRaw = fee;
   if(fee > 0 && feeSaleOn) fee = Math.max(fee * FEE_SALE_RATE, FEE_SALE_MIN);
   const total = price + dustYuan + fee;
+  // 降价标记：origPrice 是降价前的原价（须高于现价才算真降价）
+  const origPrice = parseFloat(e.origPrice) > 0 ? parseFloat(e.origPrice) : 0;
+  const dropped = origPrice > price + 1e-9;
+  const drop = dropped ? origPrice - price : 0;
+  const dropPct = dropped && origPrice > 0 ? drop / origPrice * 100 : 0;
+  const sold = !!e.sold;
   // 评分按当前权重实时重算（权重是全局参数；无属性快照的旧记录退回存档分）
   const S = (e.attrs && e.attrs.length)
     ? e.attrs.reduce((s, a) => s + a.v * (weights[a.k] ?? 0), 0)
@@ -753,7 +798,7 @@ function enrichEntry(e){
   const P = (isFinite(S) && S > 0 && total > 0) ? total / S : null;
   const denomAdj = total - worth; // 剔除灵尘投入后的玉体价格
   const Padj = (isFinite(S) && S > 0 && denomAdj > 0) ? denomAdj / S : null;
-  return {...e, price, fee, feeRaw, dustYuan, total, S: isFinite(S) ? S : null, P, Padj};
+  return {...e, price, fee, feeRaw, worth, dustYuan, total, origPrice, dropped, drop, dropPct, sold, S: isFinite(S) ? S : null, P, Padj};
 }
 
 function attrSummary(e){
@@ -764,20 +809,26 @@ function attrSummary(e){
   return parts.map(p => `${p.n}${fmt(p.v)}`).join("·");
 }
 
+const CMP_EMPTY_TXT = "还没有加入对比的玉。挑中的都算一遍加进来，最划算的会排在最上面并高亮。";
+let hideSold = loadJSON(LS.hideSold, false) === true;
+
 function renderCompare(){
   const bench = parseFloat($("benchPrice").value);
-  const list = compare.map(enrichEntry).sort((a, b) => {
+  const all = compare.map(enrichEntry);
+  const list = (hideSold ? all.filter(e => !e.sold) : all).sort((a, b) => {
     const av = cmpVal(a, sortState.key), bv = cmpVal(b, sortState.key);
     if(av === null && bv === null) return 0;
     if(av === null) return 1;  // 缺值沉底
     if(bv === null) return -1;
     return (av - bv) * sortState.dir;
   });
-  const finites = list.filter(e => isFinite(e.P)).map(e => e.P);
+  // 已成交的玉是市场参考锚点，不参与"最划算"高亮（高亮只给在售里最划算的）
+  const finites = list.filter(e => isFinite(e.P) && !e.sold).map(e => e.P);
   const minP = finites.length ? Math.min(...finites) : null;
   $("cmpTableWrap").hidden = list.length === 0;
   $("cmpEmpty").hidden = list.length !== 0;
-  $("cmpHint").hidden = list.length === 0;
+  $("cmpEmpty").textContent = compare.length ? "已成交的记录都被隐藏了（下方「隐藏已成交」开关打开中）。" : CMP_EMPTY_TXT;
+  $("cmpHint").hidden = compare.length === 0;
   $("clearCompare").disabled = list.length === 0;
   // 存在 v16 之前导入的记录（无 bonus 字段）时，显示修正入口
   $("fixBonus").hidden = !compare.some(e => e.bonus === undefined && e.level !== undefined && e.level !== "");
@@ -786,19 +837,28 @@ function renderCompare(){
     const dTxt = d === null ? "—" : (d <= 0 ? `<span class="good">低 ${fmt(-d, 1)}%</span>` : `<span class="bad">高 ${fmt(d, 1)}%</span>`);
     const hasAttrs = e.attrs && e.attrs.length;
     const attrLine = hasAttrs ? attrSummary(e) : "旧记录 · 未存属性数值";
-    const cls = (isFinite(e.P) && e.P === minP ? "best" : "") + (editingId === e.t ? " editing" : "");
-    return `<tr class="${cls}" data-t="${e.t}" tabindex="0" aria-label="${(e.name || attrSummary(e)).replace(/"/g, "")}，元每分${fmt(e.P)}">
+    const tags = [];
+    if(e.sold) tags.push(`<span class="tagline tag-sold" title="已于${e.soldAt ? new Date(e.soldAt).toLocaleDateString("zh-CN") : "此前"}成交：市场认可这个价格，可作比价参考">已成交 ✓</span>`);
+    if(e.dropped) tags.push(`<span class="tagline tag-drop" title="原价 ${fmt(e.origPrice, 2)} 元 → 现价 ${fmt(e.price, 2)} 元">降 ${fmt(e.drop, 0)} 元 · ${fmt(e.dropPct, 1)}%</span>`);
+    const cls = (isFinite(e.P) && !e.sold && e.P === minP ? "best" : "") + (editingId === e.t ? " editing" : "") + (e.sold ? " sold" : "");
+    const soldTxt = e.sold ? "取消「已成交」标记" : "标记为已成交";
+    return `<tr class="${cls}" data-t="${e.t}" tabindex="0" aria-label="${(e.name || attrSummary(e)).replace(/"/g, "")}，元每分${fmt(e.P)}${e.sold ? "，已成交" : ""}${e.dropped ? "，原价" + fmt(e.origPrice, 0) + "降" + fmt(e.drop, 0) + "元" : ""}">
       <td class="r dim">${i + 1}</td>
       <td><span class="cname${e.name ? "" : " unnamed"}">${e.name || "未命名"}${e.server ? `<span class="dim small"> · ${e.server}</span>` : ""}</span><span class="attr-line${hasAttrs ? " dim" : " bad"}">${attrLine}</span></td>
+      <td class="r">${tags.length ? tags.join("<br>") : `<span class="dim">—</span>`}</td>
       <td class="r dim">${e.level || "—"}${+e.bonus > 0 ? `<span class="attr-line" title="属性重复赠送 ${e.bonus} 级，商家实际只镶到 ${+e.level - e.bonus} 级">赠${e.bonus}</span>` : ""}</td>
-      <td class="r">${fmt(e.price, 0)}${e.fee > 0 ? `<span class="attr-line dim">跨服费 ${fmt(e.fee, 0)}${feeSaleOn ? "（已减免）" : ""}</span>` : ""}</td>
+      <td class="r">${e.dropped ? `<span class="price-old">原价 ${fmt(e.origPrice, 0)}</span><span class="bad">${fmt(e.price, 0)}</span><span class="attr-line bad">↓ 降 ${fmt(e.drop, 0)} 元（${fmt(e.dropPct, 1)}%）</span>` : fmt(e.price, 0)}${!e.dustExtra && e.worth > 0 ? `<span class="attr-line dim" title="这颗玉已镶的灵尘按当前市价折算约 ${fmt(e.worth)} 元（已含在标价内，没有另加钱）">含灵尘约 ${fmt(e.worth, 0)} 元</span>` : ""}${e.fee > 0 ? `<span class="attr-line dim">跨服费 ${fmt(e.fee, 0)}${feeSaleOn ? "（已减免）" : ""}</span>` : ""}</td>
       <td class="r dim">${e.dustYuan ? fmt(e.dustYuan, 0) : "—"}</td>
       <td class="r">${fmt(e.total ?? e.price, 0)}</td>
       <td class="r">${fmt(e.S)}</td>
-      <td class="r">${fmt(e.P)}</td>
+      <td class="r">${fmt(e.P)}${e.sold ? `<span class="attr-line sold-mark" title="这一档元/分来自真实成交，可当作市场参考线，拿去和在售的比">成交</span>` : ""}</td>
       <td class="r">${fmt(e.Padj)}</td>
       <td class="r" hidden>${dTxt}</td>
-      <td class="r"><button class="icon-btn del" type="button" data-t="${e.t}" aria-label="删除该记录">×</button></td>
+      <td class="r"><span class="row-acts">
+        <button class="icon-btn${e.sold ? " on-sold" : ""}" type="button" data-act="sold" data-t="${e.t}" title="${soldTxt}" aria-label="${soldTxt}">售</button>
+        <button class="icon-btn${e.dropped ? " on-drop" : ""}" type="button" data-act="drop" data-t="${e.t}" title="标记降价 / 改现价 / 取消降价" aria-label="标记降价${e.dropped ? "（现价 " + fmt(e.price, 0) + " 元）" : ""}">降</button>
+        <button class="icon-btn del" type="button" data-t="${e.t}" aria-label="删除该记录">×</button>
+      </span></td>
     </tr>`;
   }).join("");
   document.querySelectorAll("#panel-compare th.sortable").forEach(th => {
@@ -820,6 +880,7 @@ document.querySelector("#panel-compare thead").addEventListener("click", e => {
 $("addCompare").addEventListener("click", () => {
   const st = computeStats();
   if(!(st.valid && st.hasScore)) return;
+  const prev = editingId ? compare.find(x => x.t === editingId) : null;
   const entry = {
     t: Date.now() + "" + Math.floor(Math.random() * 1000),
     name: $("jadeName").value.trim(),
@@ -830,7 +891,16 @@ $("addCompare").addEventListener("click", () => {
     fee: st.fee,
     dustExtra: st.dustExtra,
     attrs: st.rows.map(r => ({k:r.k, v:r.v})),
+    sold: $("recSold").checked,
   };
+  if(prev){
+    // 沿用表单里没有的标记；编辑时改低价格 → 按原价自动记一次降价
+    entry.sold = entry.sold || !!prev.sold;
+    if(prev.soldAt) entry.soldAt = prev.soldAt;
+    if(parseFloat(prev.origPrice) > 0) entry.origPrice = parseFloat(prev.origPrice);
+    const base = parseFloat(entry.origPrice) > 0 ? entry.origPrice : parseFloat(prev.price);
+    if(isFinite(base) && st.price > 0 && st.price < base - 1e-9) entry.origPrice = base;
+  }
   if(editingId){
     const i = compare.findIndex(x => x.t === editingId);
     if(i >= 0){ entry.t = editingId; compare[i] = entry; }
@@ -845,6 +915,12 @@ $("addCompare").addEventListener("click", () => {
 $("cmpBody").addEventListener("click", e => {
   const tr = e.target.closest("tr[data-t]"); if(!tr) return;
   const t = tr.dataset.t;
+  const actBtn = e.target.closest("button[data-act]");
+  if(actBtn){
+    if(actBtn.dataset.act === "sold") toggleSold(t);
+    else if(actBtn.dataset.act === "drop") openDropSheet(t);
+    return;
+  }
   if(e.target.closest(".del")){
     compare = compare.filter(x => x.t !== t);
     if(editingId === t) exitEdit();
@@ -862,6 +938,76 @@ $("cmpBody").addEventListener("keydown", e => {
   if(entry) loadRecord(entry);
 });
 
+/* ---------- 已出售 / 降价标记 ---------- */
+function toggleSold(t){
+  const e = compare.find(x => x.t === t); if(!e) return;
+  if(e.sold){ delete e.sold; delete e.soldAt; }
+  else { e.sold = true; e.soldAt = Date.now(); }
+  saveCompare(); renderCompare();
+}
+// 填入降价后的新价格：记下原价，表里同时显示原价、现价与降幅
+let dropTargetId = null;
+function openDropSheet(t){
+  const e = compare.find(x => x.t === t); if(!e) return;
+  dropTargetId = t;
+  const cur = parseFloat(e.price) > 0 ? parseFloat(e.price) : 0;
+  const orig = parseFloat(e.origPrice) > 0 ? parseFloat(e.origPrice) : cur;
+  $("dropName").innerHTML = "「<b>" + (e.name || attrSummary(e)) + "</b>」当前标价 <b>" + fmt(cur, 2) + "</b> 元" +
+    (parseFloat(e.origPrice) > 0 ? "，已标记降价（原价 " + fmt(e.origPrice, 2) + " 元）" : "");
+  $("dropOrig").value = orig > 0 ? String(orig) : "";
+  $("dropNow").value = cur > 0 ? String(cur) : "";
+  updateDropPreview();
+  $("dropOverlay").hidden = false;
+  $("dropNow").focus(); $("dropNow").select();
+}
+function updateDropPreview(){
+  const el = $("dropPreview");
+  const o = parseFloat($("dropOrig").value), n = parseFloat($("dropNow").value);
+  if(!(isFinite(o) && o > 0)){ el.textContent = "先填降价前的原价（元）。"; return; }
+  if(!(isFinite(n) && n > 0)){ el.textContent = "再填降价后的现价（元）。"; return; }
+  if(n >= o){ el.textContent = "现价不低于原价：确认后会更新价格，并清除该记录的降价标记。"; return; }
+  const d = o - n;
+  el.innerHTML = "原价 " + fmt(o, 2) + " 元 → 现价 " + fmt(n, 2) + " 元，<b class=\"bad\">降 " + fmt(d, 2) + " 元（" + fmt(d / o * 100, 1) + "%）</b>。列表里会同时显示原价与现价。";
+}
+function applyDrop(){
+  const e = dropTargetId ? compare.find(x => x.t === dropTargetId) : null;
+  if(!e) return closeDropSheet();
+  const o = parseFloat($("dropOrig").value), n = parseFloat($("dropNow").value);
+  if(!(isFinite(o) && o > 0)){ alert("请填写有效的原价。"); return; }
+  if(!(isFinite(n) && n > 0)){ alert("请填写有效的现价。"); return; }
+  e.price = n;
+  if(n < o - 1e-9) e.origPrice = o;  // 确实比原价低：记下原价
+  else delete e.origPrice;           // 不低于原价（涨回来了）：去掉降价标记
+  saveCompare(); renderCompare(); closeDropSheet();
+}
+function clearDropFlag(){
+  const e = dropTargetId ? compare.find(x => x.t === dropTargetId) : null;
+  if(e && e.origPrice){ delete e.origPrice; saveCompare(); renderCompare(); }
+  closeDropSheet();
+}
+function closeDropSheet(){ $("dropOverlay").hidden = true; dropTargetId = null; }
+["dropOrig","dropNow"].forEach(id => $(id).addEventListener("input", updateDropPreview));
+["dropOrig","dropNow"].forEach(id => $(id).addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); applyDrop(); } }));
+$("dropOk").addEventListener("click", applyDrop);
+$("dropClear").addEventListener("click", clearDropFlag);
+$("dropCancel").addEventListener("click", closeDropSheet);
+// Esc 关闭浮层（降价面板 / 批量导入）
+document.addEventListener("keydown", e => {
+  if(e.key !== "Escape") return;
+  if(!$("dropOverlay").hidden) closeDropSheet();
+  else if(!$("importOverlay").hidden) $("importOverlay").hidden = true;
+});
+function renderHideSoldChip(){
+  const b = $("hideSoldToggle");
+  b.classList.toggle("on", hideSold);
+  b.textContent = hideSold ? "已成交已隐藏 ✓" : "隐藏已成交";
+}
+$("hideSoldToggle").addEventListener("click", () => {
+  hideSold = !hideSold;
+  saveJSON(LS.hideSold, hideSold);
+  renderHideSoldChip(); renderCompare();
+});
+
 function loadRecord(e){
   editingId = e.t;
   $("jadeName").value = e.name || "";
@@ -876,6 +1022,8 @@ function loadRecord(e){
     .forEach(r => rowsState.push({k:r.k || "dmg", v:r.v ?? "", pending:false}));
   renderRows();
   $("exitEdit").hidden = false;
+  $("recSold").parentElement.hidden = false;
+  $("recSold").checked = !!e.sold;
   $("addCompare").textContent = "更新该记录";
   calc(); saveForm(); renderCompare();
   $("panel-input").scrollIntoView({block:"start"});
@@ -883,6 +1031,8 @@ function loadRecord(e){
 function exitEdit(){
   editingId = null;
   $("exitEdit").hidden = true;
+  $("recSold").parentElement.hidden = true;
+  $("recSold").checked = false;
   $("addCompare").textContent = "加入对比列表";
   renderCompare(); calc();
 }
@@ -905,7 +1055,7 @@ function fixOldBonus(){
 $("fixBonus").addEventListener("click", fixOldBonus);
 $("clearCompare").addEventListener("click", () => {
   if(!compare.length) return;
-  if(confirm("确定清空对比列表？")){ compare = []; editingId = null; $("exitEdit").hidden = true; $("addCompare").textContent = "加入对比列表"; saveCompare(); renderCompare(); calc(); }
+  if(confirm("确定清空对比列表？")){ compare = []; editingId = null; $("exitEdit").hidden = true; $("recSold").parentElement.hidden = true; $("recSold").checked = false; $("addCompare").textContent = "加入对比列表"; saveCompare(); renderCompare(); calc(); }
 });
 
 /* ---------- 批量导入 · 藏宝阁文本 ---------- */
@@ -1212,6 +1362,7 @@ renderWeights();
 calc();
 renderCompare();
 renderFeeSaleChip();
+renderHideSoldChip();
 </script>
 </body>
 </html>
